@@ -1,0 +1,29 @@
+name = "rich-time-quotations-local-test"
+main = "src/worker.ts"
+compatibility_date = "2025-01-29"
+assets = { directory = "dist", binding = "ASSETS", not_found_handling = "single-page-application" }
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rich-time-db-local-test"
+database_id = "local-test-only"
+migrations_dir = "migrations"
+
+[vars]
+OWNER_USERNAME = "local-test-owner"
+OWNER_PASSWORD_HASH = "pbkdf2$210000$UmljaFRpbWVMb2NhbFRlc3RTYWx0IQ$A0BoBUvsm3VaD7doT8iH8om49UBOCVjJeqObHeocI0k"
+SESSION_SECRET = "local-test-session-secret-only-not-production"
+
+[env.test]
+name = "rich-time-quotations-local-test-env"
+
+[env.test.vars]
+OWNER_USERNAME = "local-test-owner"
+OWNER_PASSWORD_HASH = "pbkdf2$210000$UmljaFRpbWVMb2NhbFRlc3RTYWx0IQ$A0BoBUvsm3VaD7doT8iH8om49UBOCVjJeqObHeocI0k"
+SESSION_SECRET = "local-test-session-secret-only-not-production"
+
+[[env.test.d1_databases]]
+binding = "DB"
+database_name = "rich-time-db-local-test"
+database_id = "local-test-only"
+migrations_dir = "migrations"

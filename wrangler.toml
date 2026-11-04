@@ -1,0 +1,10 @@
+name = "rich-time-quotations"
+main = "src/worker.ts"
+compatibility_date = "2025-01-29"
+assets = { directory = "dist", binding = "ASSETS", not_found_handling = "single-page-application" }
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rich-time-db"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"

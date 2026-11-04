@@ -1,0 +1,4 @@
+# Generate with: npm run password:hash -- "your strong password"
+OWNER_USERNAME=owner
+OWNER_PASSWORD_HASH=replace_with_pbkdf2_hash
+SESSION_SECRET=replace_with_a_long_random_secret

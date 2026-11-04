@@ -1,0 +1,45 @@
+{
+  "name": "rich-time-quotations",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:client\" \"npm:dev:worker\"",
+    "dev:client": "vite --host 0.0.0.0",
+    "dev:worker": "wrangler dev --local --persist-to .wrangler/state",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "test": "vitest run",
+    "db:migrate:local": "wrangler d1 migrations apply rich-time-db --local --persist-to .wrangler/state",
+    "db:migrate:remote": "wrangler d1 migrations apply rich-time-db --remote",
+    "password:hash": "tsx scripts/hash-password.ts",
+    "setup:credentials": "powershell -ExecutionPolicy Bypass -File scripts/setup-local-credentials.ps1",
+    "seed:local": "tsx scripts/seed-local.ts",
+    "verify:local-api": "tsx scripts/verify-local-api.ts",
+    "verify:pdf": "tsx scripts/verify-pdf-layout.ts"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.4.3",
+    "hono": "^4.6.14",
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^3.8.4",
+    "lucide-react": "^1.67.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261102.1",
+    "@types/node": "^22.10.7",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.2",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8",
+    "wrangler": "^4.1.1"
+  }
+}
