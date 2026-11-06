@@ -15,8 +15,12 @@ import {
   Plus,
   X,
   ChevronRight,
+  Pencil,
+  Trash2,
+  Settings as SettingsIcon,
 } from "lucide-react";
-import type { Buyer, Product, Quotation } from "./types";
+import type { Buyer, Product, Quotation, Settings } from "./types";
+import { orderFilename, orderReference } from "./order-reference";
 import "./styles.css";
 const table = (at as any).default,
   fmt = (n: number) =>
@@ -26,6 +30,8 @@ const table = (at as any).default,
     }).format(n / 100);
 const moneyNumber = (n: number) =>
   new Intl.NumberFormat("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n / 100);
+const productName = (product: Pick<Product, "brand" | "model_name">) =>
+  [product.brand, product.model_name].filter(Boolean).join(" ");
 let csrf = "";
 const newOrderKey = () => crypto.randomUUID();
 const formatOrderDateTime = (value: string) => {
@@ -48,21 +54,54 @@ const formatOrderDateTime = (value: string) => {
   return `${datePart} · ${timePart}`;
 };
 async function api<T>(u: string, o: RequestInit = {}): Promise<T> {
-  const r = await fetch(u, {
-    ...o,
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRF-Token": csrf,
-      ...o.headers,
-    },
-  });
+  let r: Response;
+  try {
+    r = await fetch(u, {
+      ...o,
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrf,
+        ...o.headers,
+      },
+    });
+  } catch {
+    throw Error("Connection unavailable. Your draft is still available; reconnect and retry saving.");
+  }
   if (!r.ok) {
     const b = await r.json().catch(() => ({}));
     throw Error((b as any).error || `Request failed (${r.status})`);
   }
   return r.status === 204 ? (undefined as T) : r.json();
 }
-function PDF({ q }: { q: Quotation }) {
+type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
+function PwaControls() {
+  const [deferred, setDeferred] = useState<InstallPromptEvent | null>(null);
+  const [showIosHelp, setShowIosHelp] = useState(false);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  useEffect(() => {
+    if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
+    const onInstallPrompt = (event: Event) => { event.preventDefault(); setDeferred(event as InstallPromptEvent); };
+    window.addEventListener("beforeinstallprompt", onInstallPrompt);
+    navigator.serviceWorker.register("/sw.js").then((registration) => {
+      registration.addEventListener("updatefound", () => {
+        const worker = registration.installing;
+        worker?.addEventListener("statechange", () => {
+          if (worker.state === "installed" && navigator.serviceWorker.controller) setUpdateAvailable(true);
+        });
+      });
+    }).catch(() => undefined);
+    return () => window.removeEventListener("beforeinstallprompt", onInstallPrompt);
+  }, []);
+  const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(navigator as Navigator & { standalone?: boolean }).standalone;
+  if (!deferred && !isIos && !updateAvailable) return null;
+  return <aside className="pwa-controls" aria-live="polite">
+    {deferred && <button type="button" onClick={async () => { await deferred.prompt(); setDeferred(null); }}><Download aria-hidden="true" /> Install app</button>}
+    {isIos && <button type="button" onClick={() => setShowIosHelp((open) => !open)}><Download aria-hidden="true" /> Install app</button>}
+    {showIosHelp && <p>In Safari, tap Share, then choose Add to Home Screen. Installation requires HTTPS on a phone.</p>}
+    {updateAvailable && <button type="button" className="primary" onClick={() => location.reload()}>Update available — reload</button>}
+  </aside>;
+}
+function PDF({ q, header }: { q: Quotation; header?: Settings | null }) {
   const [info, setInfo] = useState("");
   const run = async (action: string) => {
     const previewWindow = action === "preview" ? window.open("", "_blank") : null;
@@ -73,27 +112,34 @@ function PDF({ q }: { q: Quotation }) {
       const left = 14;
       const right = pageWidth - 14;
 
+      const headerName = q.shop_name?.trim() || header?.shop_name || "RSK Holdings";
+      const headerAddress = q.shop_address?.trim() || header?.address || "";
+      const headerPhone = q.shop_phone?.trim() || header?.phone || "";
+      const documentTitle = q.pdf_document_title?.trim() || header?.pdf_document_title || "Purchase Order";
+      const headerLines = [...headerAddress.split(/\r?\n/).map((line) => line.trim()).filter(Boolean), headerPhone ? `Phone: ${headerPhone}` : ""];
+
       pdf.setTextColor(25, 40, 55);
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(15);
-      pdf.text("RICH TIME", left, 17);
+      pdf.text(headerName, left, 17);
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(9);
-      pdf.text(["No81, keyzer St, Colombo 11", "Phone: 0778917678"], left, 23);
+      if (headerLines.length) pdf.text(headerLines, left, 23);
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(16);
-      pdf.text("Purchase Order", right, 17, { align: "right" });
+      pdf.text(pdf.splitTextToSize(documentTitle, 68), right, 17, { align: "right" });
       pdf.setDrawColor(190, 195, 200);
       pdf.setLineWidth(0.25);
-      pdf.line(left, 32, right, 32);
+      const dividerY = Math.max(31, 25 + headerLines.length * 4.5);
+      pdf.line(left, dividerY, right, dividerY);
 
-      let detailsY = 39;
+      let detailsY = dividerY + 7;
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(10);
       pdf.text("Customer", left, detailsY);
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(9);
-      const customer = [`Name : ${q.buyer_name}`, `Phone : ${q.buyer_phone}`];
+      const customer = [`Name : ${q.buyer_name}`];
       if (q.buyer_address?.trim()) {
         customer.push(...pdf.splitTextToSize(`Address : ${q.buyer_address}`, 108));
       }
@@ -102,12 +148,14 @@ function PDF({ q }: { q: Quotation }) {
       pdf.setFont("helvetica", "bold");
       pdf.text("Order number", right, detailsY, { align: "right" });
       pdf.setFont("helvetica", "normal");
-      pdf.text(q.quotation_number, right, detailsY + 5, { align: "right" });
+      const referenceLines = pdf.splitTextToSize(orderReference(q), 72);
+      pdf.text(referenceLines, right, detailsY + 5, { align: "right" });
       pdf.setFont("helvetica", "bold");
-      pdf.text("Order date", right, detailsY + 12, { align: "right" });
+      const orderDateY = detailsY + 10 + referenceLines.length * 4.5;
+      pdf.text("Order date", right, orderDateY, { align: "right" });
       pdf.setFont("helvetica", "normal");
-      pdf.text(formatOrderDateTime(q.created_at), right, detailsY + 17, { align: "right" });
-      detailsY += Math.max(27, 10 + customer.length * 4.5);
+      pdf.text(formatOrderDateTime(q.created_at), right, orderDateY + 5, { align: "right" });
+      detailsY += Math.max(27, 10 + customer.length * 4.5, 15 + referenceLines.length * 4.5);
 
       table(pdf, {
         startY: detailsY,
@@ -140,7 +188,7 @@ function PDF({ q }: { q: Quotation }) {
       }
       const blob = pdf.output("blob");
       const url = URL.createObjectURL(blob);
-      const filename = `${q.quotation_number}.pdf`;
+      const filename = orderFilename(q);
       const file = new File([blob], filename, { type: "application/pdf" });
       if (action === "preview") {
         if (previewWindow) previewWindow.location.href = url;
@@ -207,15 +255,15 @@ function BuyerForm({
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
-    if (!form.full_name.trim() || !form.phone.trim()) {
-      setError("Name and phone are required.");
+    if (!form.full_name.trim() || !form.phone.trim() || !form.address.trim()) {
+      setError("Name, phone, and address are required.");
       return;
     }
     setBusy(true);
     try {
       const result = await api<Buyer>(buyer ? `/api/buyers/${buyer.id}` : "/api/buyers", {
         method: buyer ? "PUT" : "POST",
-        body: JSON.stringify({ ...form, email: form.email || "", address: form.address || null, active: 1 }),
+        body: JSON.stringify({ ...form, email: form.email || "", address: form.address, active: 1 }),
       });
       complete(buyer ? { ...buyer, ...form } : result);
     } catch (reason) {
@@ -229,7 +277,7 @@ function BuyerForm({
       <label>Name<input required value={form.full_name} onChange={(event) => setForm({ ...form, full_name: event.target.value })} /></label>
       <label>Phone<input required inputMode="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
       <label>Email (optional)<input type="email" value={form.email || ""} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
-      <label>Address (optional)<textarea value={form.address || ""} onChange={(event) => setForm({ ...form, address: event.target.value })} /></label>
+      <label>Address<textarea required value={form.address || ""} onChange={(event) => setForm({ ...form, address: event.target.value })} /></label>
       {error && <p className="error">{error}</p>}
       <div className="form-footer">
         <button type="button" onClick={cancelForm}>Cancel</button>
@@ -237,6 +285,34 @@ function BuyerForm({
       </div>
     </form>
   );
+}
+function ProductForm({ product, complete, cancel }: { product: Product | null; complete: (product: Product) => void; cancel: () => void }) {
+  const [form, setForm] = useState({
+    name: product ? productName(product) : "",
+    price: product ? String(product.price_minor / 100) : "",
+  });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const price = Number(form.price);
+    if (!form.name.trim() || !Number.isFinite(price) || price < 0) {
+      setError("Item name and a valid selling price are required.");
+      return;
+    }
+    setBusy(true); setError("");
+    const payload = { ...form, price_minor: Math.round(price * 100), active: product?.active ?? 1 };
+    try {
+      const result = await api<Product>(product ? `/api/products/${product.id}` : "/api/products", { method: product ? "PUT" : "POST", body: JSON.stringify(payload) });
+      complete(product ? { ...product, brand: form.name.trim(), model_name: "", price_minor: payload.price_minor, active: payload.active } : result);
+    } catch (reason) { setError((reason as Error).message); } finally { setBusy(false); }
+  };
+  return <form className="inline-form" onSubmit={save}>
+    <label>Item name<input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label>
+    <label>Selling price (LKR)<input required type="number" min="0" step="0.01" inputMode="decimal" value={form.price} onChange={(event) => setForm({ ...form, price: event.target.value })} /></label>
+    {error && <p className="error">{error}</p>}
+    <div className="form-footer"><button type="button" onClick={cancel}>Cancel</button><button className="primary" disabled={busy}>{busy ? "Saving…" : "Save product"}</button></div>
+  </form>;
 }
 function BuyerPicker({ buyers, selected, select, add }: { buyers: Buyer[]; selected: Buyer | null; select: (b: Buyer | null) => void; add: () => void }) {
   const [query, setQuery] = useState("");
@@ -265,23 +341,29 @@ function BuyerPicker({ buyers, selected, select, add }: { buyers: Buyer[]; selec
   }, [open]);
   return <div className="picker" ref={root}><label>Buyer<input ref={input} aria-label="Search or select buyer" placeholder="Search or select buyer" value={selected ? `${selected.full_name} · ${selected.phone}` : query} onFocus={() => { setOpen(true); if (selected) select(null); }} onChange={e => { setQuery(e.target.value); setOpen(true); }}/></label>{open && <div className="picker-popover"><button type="button" className="add-row buyer-add-row" onClick={add}><Plus aria-hidden="true" /> Add new buyer</button><div className="picker-results">{matches.map(b => <button type="button" key={b.id} onClick={() => { select(b); close(); setQuery(""); }}><strong>{b.full_name}</strong><small>{b.phone}</small></button>)}{!matches.length && <p>No buyers found</p>}</div></div>}</div>;
 }
+type DraftItem = { p: Product; q: number; unitPriceMinor: number };
+
 function ItemsTable({
   products,
   items,
   setItems,
+  role,
   onQuantityValidityChange,
   validationAttempt,
 }: {
   products: Product[];
-  items: { p: Product; q: number }[];
-  setItems: React.Dispatch<React.SetStateAction<{ p: Product; q: number }[]>>;
-  onQuantityValidityChange: (hasInvalidQuantity: boolean) => void;
+  items: DraftItem[];
+  setItems: React.Dispatch<React.SetStateAction<DraftItem[]>>;
+  role: "ADMIN" | "REP";
+  onQuantityValidityChange: (hasInvalidInput: boolean) => void;
   validationAttempt: number;
 }) {
   const [query, setQuery] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [quantityDrafts, setQuantityDrafts] = useState<Record<number, string>>({});
+  const [priceDrafts, setPriceDrafts] = useState<Record<number, string>>({});
   const [touchedQuantities, setTouchedQuantities] = useState<Record<number, boolean>>({});
+  const [touchedPrices, setTouchedPrices] = useState<Record<number, boolean>>({});
   const trigger = useRef<HTMLButtonElement>(null);
   const matches = products.filter((product) =>
     `${product.brand} ${product.model_name} ${product.sku}`
@@ -291,6 +373,12 @@ function ItemsTable({
 
   const quantityValue = (productId: number, quantity: number) => quantityDrafts[productId] ?? String(quantity);
   const validQuantity = (value: string) => /^\d+$/.test(value) && Number(value) >= 1;
+  const priceValue = (productId: number, price: number) => priceDrafts[productId] ?? (price / 100).toFixed(2);
+  const priceMinor = (value: string) => /^\d+(?:\.\d{1,2})?$/.test(value) ? Math.round(Number(value) * 100) : null;
+  const validPrice = (product: Product, value: string) => {
+    const valueMinor = priceMinor(value);
+    return valueMinor !== null && valueMinor >= 0 && (role !== "REP" || valueMinor >= product.price_minor);
+  };
   const setQuantity = (productId: number, value: string) => {
     setQuantityDrafts((drafts) => ({ ...drafts, [productId]: value }));
     if (!validQuantity(value)) return;
@@ -304,6 +392,13 @@ function ItemsTable({
   const validateQuantity = (productId: number) => {
     setTouchedQuantities((touched) => ({ ...touched, [productId]: true }));
   };
+  const setPrice = (product: Product, value: string) => {
+    setPriceDrafts((drafts) => ({ ...drafts, [product.id]: value }));
+    const valueMinor = priceMinor(value);
+    if (valueMinor === null) return;
+    setItems((current) => current.map((item) => item.p.id === product.id ? { ...item, unitPriceMinor: valueMinor } : item));
+  };
+  const validatePrice = (productId: number) => setTouchedPrices((touched) => ({ ...touched, [productId]: true }));
   const remove = (productId: number) =>
     setItems((current) => current.filter((item) => item.p.id !== productId));
   const choose = (product: Product) => {
@@ -312,7 +407,7 @@ function ItemsTable({
         ? current.map((item) =>
             item.p.id === product.id ? { ...item, q: item.q + 1 } : item,
           )
-        : [...current, { p: product, q: 1 }],
+        : [...current, { p: product, q: 1, unitPriceMinor: product.price_minor }],
     );
     setQuery("");
     setPickerOpen(false);
@@ -335,12 +430,13 @@ function ItemsTable({
     };
   }, [pickerOpen]);
   useEffect(() => {
-    const invalid = items.some((item) => !validQuantity(quantityValue(item.p.id, item.q)));
+    const invalid = items.some((item) => !validQuantity(quantityValue(item.p.id, item.q)) || !validPrice(item.p, priceValue(item.p.id, item.unitPriceMinor)));
     onQuantityValidityChange(invalid);
-  }, [items, quantityDrafts]);
+  }, [items, quantityDrafts, priceDrafts]);
   useEffect(() => {
     if (!validationAttempt) return;
     setTouchedQuantities(Object.fromEntries(items.map((item) => [item.p.id, true])));
+    setTouchedPrices(Object.fromEntries(items.map((item) => [item.p.id, true])));
   }, [validationAttempt]);
 
   return (
@@ -351,7 +447,7 @@ function ItemsTable({
             <div className="item-card-top">
               <span className="item-number">{index + 1}</span>
               <span className="item-description">
-                <strong>{item.p.brand} {item.p.model_name}</strong>
+                <strong>{productName(item.p)}</strong>
                 <small>{item.p.sku}</small>
               </span>
               <button type="button" className="remove-item" onClick={() => remove(item.p.id)}>
@@ -372,8 +468,13 @@ function ItemsTable({
                 />
                 {touchedQuantities[item.p.id] && !validQuantity(quantityValue(item.p.id, item.q)) && <small className="field-error">Enter a whole number of at least 1.</small>}
               </label>
-              <span><small>Unit rate</small><strong>{fmt(item.p.price_minor)}</strong></span>
-              <span><small>Amount</small><strong>{fmt(item.p.price_minor * item.q)}</strong></span>
+              <label>
+                Unit price (LKR)
+                <input type="text" inputMode="decimal" value={priceValue(item.p.id, item.unitPriceMinor)} onChange={(event) => setPrice(item.p, event.target.value)} onBlur={() => validatePrice(item.p.id)} />
+                {role === "REP" && <small>Minimum: {fmt(item.p.price_minor)}</small>}
+                {touchedPrices[item.p.id] && !validPrice(item.p, priceValue(item.p.id, item.unitPriceMinor)) && <small className="field-error">{role === "REP" ? "Enter a price at or above the minimum." : "Enter a non-negative price."}</small>}
+              </label>
+              <span><small>Amount</small><strong>{fmt(item.unitPriceMinor * item.q)}</strong></span>
             </div>
           </article>
         ))}
@@ -386,10 +487,10 @@ function ItemsTable({
             {items.map((item, index) => (
               <tr key={item.p.id}>
                 <td>{index + 1}</td>
-                <td>{item.p.brand} {item.p.model_name}<small>{item.p.sku}</small></td>
+                <td>{productName(item.p)}<small>{item.p.sku}</small></td>
                 <td><input type="number" min="1" step="1" value={quantityValue(item.p.id, item.q)} onChange={(event) => setQuantity(item.p.id, event.target.value)} onBlur={() => validateQuantity(item.p.id)} /></td>
-                <td>{fmt(item.p.price_minor)}</td>
-                <td>{fmt(item.p.price_minor * item.q)}</td>
+                <td><input type="text" inputMode="decimal" value={priceValue(item.p.id, item.unitPriceMinor)} onChange={(event) => setPrice(item.p, event.target.value)} onBlur={() => validatePrice(item.p.id)} />{role === "REP" && <small>Minimum: {fmt(item.p.price_minor)}</small>}</td>
+                <td>{fmt(item.unitPriceMinor * item.q)}</td>
                 <td><button type="button" className="remove-item" onClick={() => remove(item.p.id)}>Remove</button></td>
               </tr>
             ))}
@@ -429,7 +530,7 @@ function ItemsTable({
             <div className="product-results" aria-live="polite">
               {matches.map((product) => (
                 <button type="button" key={product.id} onClick={() => choose(product)}>
-                  <strong>{product.brand} {product.model_name}</strong>
+                  <strong>{productName(product)}</strong>
                   <small>{product.sku} · {fmt(product.price_minor)}</small>
                 </button>
               ))}
@@ -443,11 +544,21 @@ function ItemsTable({
 }
 function App() {
   const [ok, setOk] = useState(false),
+    [role, setRole] = useState<"ADMIN" | "REP">("REP"),
+    [username, setUsername] = useState(""),
+    [accounts, setAccounts] = useState<any[]>([]),
+    [accountUsername, setAccountUsername] = useState(""),
+    [accountPassword, setAccountPassword] = useState(""),
+    [currentPassword, setCurrentPassword] = useState(""),
+    [newPassword, setNewPassword] = useState(""),
+    [accountError, setAccountError] = useState(""),
+    [accountNotice, setAccountNotice] = useState(""),
+    [deletingAccountId, setDeletingAccountId] = useState<number | null>(null),
     [page, setPage] = useState("quote"),
     [bs, setBs] = useState<Buyer[]>([]),
     [ps, setPs] = useState<Product[]>([]),
     [b, setB] = useState<Buyer | null>(null),
-    [its, setIts] = useState<{ p: Product; q: number }[]>([]),
+    [its, setIts] = useState<DraftItem[]>([]),
     [saved, setSaved] = useState<Quotation | null>(null),
     [savedMode, setSavedMode] = useState<"success" | "detail" | null>(null),
     [history, setHistory] = useState<any[]>([]),
@@ -462,6 +573,7 @@ function App() {
     [productResults, setProductResults] = useState<Product[]>([]),
     [productLoading, setProductLoading] = useState(false),
     [productError, setProductError] = useState(""),
+    [productForm, setProductForm] = useState<Product | null | undefined>(undefined),
     [err, setErr] = useState(""),
     [saving, setSaving] = useState(false),
     [quantityInvalid, setQuantityInvalid] = useState(false),
@@ -469,7 +581,10 @@ function App() {
     [orderKey, setOrderKey] = useState(newOrderKey),
     [formResetKey, setFormResetKey] = useState(0),
     [buyerFormDirty, setBuyerFormDirty] = useState(false),
-    [buyerForm, setBuyerForm] = useState<Buyer | null | undefined>(undefined);
+    [buyerForm, setBuyerForm] = useState<Buyer | null | undefined>(undefined),
+    [pdfHeader, setPdfHeader] = useState<Settings | null>(null),
+    [pdfHeaderBusy, setPdfHeaderBusy] = useState(false),
+    [accountSection, setAccountSection] = useState<"profile" | "pdf" | "team">("profile");
   const dialogTrigger = useRef<HTMLElement | null>(null);
   const lastFocusedField = useRef<HTMLElement | null>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
@@ -482,18 +597,24 @@ function App() {
     api<any>("/api/session")
       .then((s) => {
         csrf = s.csrfToken;
+        setRole(s.role);
+        setUsername(s.username);
         setOk(true);
         return Promise.all([
           api<Buyer[]>("/api/buyers"),
           api<Product[]>("/api/products"),
+          api<Settings>("/api/settings"),
         ]);
       })
-      .then(([x, y]) => {
+      .then(([x, y, settings]) => {
         setBs(x);
         setPs(y);
+        setPdfHeader(settings);
       })
       .catch(() => setOk(false));
   }, []);
+  const refreshAccounts = () => role === "ADMIN" && api<any[]>("/api/accounts").then(setAccounts).catch((error) => setAccountError((error as Error).message));
+  useEffect(() => { if (ok && role === "ADMIN") refreshAccounts(); }, [ok, role]);
   useEffect(() => {
     if (!ok) return;
     let stale = false;
@@ -611,11 +732,11 @@ function App() {
     return () => document.removeEventListener("focusin", keepVisible);
   }, []);
   if (!ok) return <Login />;
-  const total = its.reduce((n, i) => n + i.p.price_minor * i.q, 0);
+  const total = its.reduce((n, i) => n + i.unitPriceMinor * i.q, 0);
   const save = async () => {
     if (saving) return;
     if (quantityInvalid) {
-      setErr("Correct the invalid item quantities before saving.");
+      setErr("Correct the invalid item quantities or prices before saving.");
       setQuantityValidationAttempt((attempt) => attempt + 1);
       return;
     }
@@ -630,7 +751,7 @@ function App() {
           idempotencyKey: orderKey,
           buyerId: b.id,
           quotationDate: new Date().toISOString().slice(0, 10),
-          items: its.map((i) => ({ productId: i.p.id, quantity: i.q })),
+          items: its.map((i) => ({ productId: i.p.id, quantity: i.q, unitPriceMinor: i.unitPriceMinor })),
         }),
       });
       setSaved(q);
@@ -660,7 +781,11 @@ function App() {
   return (
     <div className={`app-shell${keyboardOpen ? " keyboard-open" : ""}`}>
       <header className="topbar">
-        <b>RICH TIME</b>
+        <div className="topbar-identity">
+          <b>RSK Holdings</b>
+          <span title={username}>{username}</span>
+        </div>
+        <button className="header-action" onClick={() => navigate("account")} aria-label="Settings"><SettingsIcon /></button>
         <button
           onClick={() =>
             (!buyerFormDirty || window.confirm("Discard unsaved buyer changes and log out?")) &&
@@ -674,7 +799,7 @@ function App() {
       <main className="app-main">
         {page === "quote" && (
           <section className="quote-page">
-            <h1>New Order</h1>
+            <h1 className="page-title"><FileText aria-hidden="true" /> New Order</h1>
             <BuyerPicker
               key={`buyer-${formResetKey}`}
               buyers={bs}
@@ -686,7 +811,7 @@ function App() {
               }}
             />
             <h2>Items</h2>
-            <ItemsTable key={`items-${formResetKey}`} products={ps} items={its} setItems={setIts} onQuantityValidityChange={setQuantityInvalid} validationAttempt={quantityValidationAttempt} />
+            <ItemsTable key={`items-${formResetKey}`} products={ps.filter((product) => Boolean(product.active))} items={its} setItems={setIts} role={role} onQuantityValidityChange={setQuantityInvalid} validationAttempt={quantityValidationAttempt} />
             <div className="quote-total">
               <span>Total</span>
               <strong>{fmt(total)}</strong>
@@ -699,13 +824,13 @@ function App() {
         )}
         {page === "history" && (
           <section className="list-page">
-            <h1>Orders</h1>
+            <h1 className="page-title"><History aria-hidden="true" /> Orders</h1>
             <label className="history-search">
-              Search by buyer name or phone
+              {role === "ADMIN" ? "Search by buyer, phone, order, or Rep" : "Search by buyer name or phone"}
               <div>
                 <input
                   type="search"
-                  placeholder="Buyer name, phone, or order number"
+                  placeholder={role === "ADMIN" ? "Buyer, phone, order, or Rep username" : "Buyer name, phone, or order number"}
                   value={historyQuery}
                   onChange={(event) => setHistoryQuery(event.target.value)}
                 />
@@ -720,6 +845,7 @@ function App() {
                 <span>
                   <strong>{h.buyer_name}</strong>
                   <small>{formatOrderDateTime(h.created_at)}</small>
+                  {role === "ADMIN" && h.creator_username && <small>Created by {h.creator_username}</small>}
                 </span>
                 <b>{fmt(h.total_minor)}</b>
                 <ChevronRight aria-hidden="true" />
@@ -730,28 +856,37 @@ function App() {
         )}
         {page === "products" && (
           <section className="list-page">
-            <h1>Products</h1>
-            <label className="history-search">
+            <div className="section-heading"><h1 className="page-title"><Package aria-hidden="true" /> Products</h1>{role === "ADMIN" && <button type="button" className="add-row" onClick={() => setProductForm(null)}><Plus aria-hidden="true" /> Add product</button>}</div>
+            {productForm !== undefined && <ProductForm product={productForm} cancel={() => setProductForm(undefined)} complete={(product) => { setProductForm(undefined); setProductResults((current) => productForm ? current.map((item) => item.id === product.id ? product : item) : [product, ...current]); setPs((current) => productForm ? current.map((item) => item.id === product.id ? product : item) : [...current, product]); }} />}
+            {productForm === undefined && <label className="history-search">
               Search products
               <div>
                 <input type="search" placeholder="Brand, model, or SKU" value={productQuery} onChange={(event) => setProductQuery(event.target.value)} />
                 {productQuery && <button type="button" onClick={() => setProductQuery("")}>Clear search</button>}
               </div>
-            </label>
+            </label>}
             {productLoading && <p>Loading products…</p>}
             {productError && <p className="error">{productError}</p>}
             {!productLoading && !productError && !productResults.length && <p>No products found.</p>}
-            {productResults.map((p) => (
-              <article className="history-card" key={p.id}>
-                <span>{p.brand} {p.model_name}<small>{p.sku}</small></span>
-                <b>{fmt(p.price_minor)}</b>
+            {productForm === undefined && <div className="product-card-list">{productResults.map((p) => (
+              <article className="product-card" key={p.id}>
+                <div className="product-card-heading">
+                  <div><h2>{productName(p)}</h2><small>{p.sku}</small></div>
+                  <span className={`status-badge ${p.active ? "status-active" : "status-hidden"}`}>{p.active ? "Active" : "Hidden"}</span>
+                </div>
+                <strong className="product-card-price">{fmt(p.price_minor)}</strong>
+                {role === "ADMIN" && <div className="product-card-actions">
+                  <button type="button" className="icon-action action-edit" aria-label={`Edit ${productName(p)}`} title="Edit product" onClick={() => setProductForm(p)}><Pencil aria-hidden="true" /></button>
+                  <button type="button" className={`icon-action ${p.active ? "action-neutral" : "action-success"}`} aria-label={`${p.active ? "Hide" : "Unhide"} ${productName(p)}`} title={p.active ? "Hide product" : "Unhide product"} onClick={async () => { try { await api(`/api/products/${p.id}`, { method: "PUT", body: JSON.stringify({ ...p, active: p.active ? 0 : 1 }) }); setProductResults((current) => current.map((item) => item.id === p.id ? { ...item, active: p.active ? 0 : 1 } : item)); setPs((current) => current.map((item) => item.id === p.id ? { ...item, active: p.active ? 0 : 1 } : item)); } catch (error) { setProductError((error as Error).message); } }}>{p.active ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}</button>
+                  <button type="button" className="icon-action action-danger" aria-label={`Delete ${productName(p)}`} title="Delete product" onClick={async () => { if (!window.confirm(`Delete ${productName(p)}?`)) return; try { const result = await api<{ hidden?: boolean }>(`/api/products/${p.id}`, { method: "DELETE" }); if (result.hidden) { setProductResults((current) => current.map((item) => item.id === p.id ? { ...item, active: 0 } : item)); setPs((current) => current.map((item) => item.id === p.id ? { ...item, active: 0 } : item)); } else { setProductResults((current) => current.filter((item) => item.id !== p.id)); setPs((current) => current.filter((item) => item.id !== p.id)); } } catch (error) { setProductError((error as Error).message); } }}><Trash2 aria-hidden="true" /></button>
+                </div>}
               </article>
-            ))}
+            ))}</div>}
           </section>
         )}
         {page === "buyers" && (
           <section className="list-page">
-            <div className="section-heading"><h1>Buyers</h1><button type="button" className="add-row" onClick={() => setBuyerForm(null)}><Plus aria-hidden="true" /> Add buyer</button></div>
+            <div className="section-heading"><h1 className="page-title"><Users aria-hidden="true" /> Buyers</h1><button type="button" className="add-row" onClick={() => setBuyerForm(null)}><Plus aria-hidden="true" /> Add buyer</button></div>
             {buyerForm !== undefined && <BuyerForm buyer={buyerForm} onDirtyChange={setBuyerFormDirty} cancel={() => { setBuyerFormDirty(false); setBuyerForm(undefined); }} complete={async buyer => { await refreshBuyers(); setBuyerFormDirty(false); setBuyerForm(undefined); setB(buyer); setPage("quote"); }} />}
             {buyerForm === undefined && <label className="history-search">
               Search buyers
@@ -766,9 +901,47 @@ function App() {
             {buyerForm === undefined && buyerResults.map((x) => (
               <article className="history-card" key={x.id}>
                 <span>{x.full_name}<small>{x.phone}</small></span>
-                <button onClick={() => setBuyerForm(x)}>Edit</button>
+                <button type="button" className="buyer-edit-action" aria-label={`Edit ${x.full_name}`} title="Edit buyer" onClick={() => setBuyerForm(x)}><Pencil aria-hidden="true" /></button>
               </article>
             ))}
+          </section>
+        )}
+        {page === "account" && (
+          <section className="list-page account-page">
+            <h1 className="page-title"><SettingsIcon aria-hidden="true" /> Settings</h1>
+            <p>{username} · {role}</p>
+            <nav className="account-tabs" aria-label="Settings sections">
+              <button type="button" className={accountSection === "profile" ? "active" : ""} onClick={() => setAccountSection("profile")}>Profile</button>
+              {role === "ADMIN" && <button type="button" className={accountSection === "pdf" ? "active" : ""} onClick={() => setAccountSection("pdf")}>PDF header</button>}
+              {role === "ADMIN" && <button type="button" className={accountSection === "team" ? "active" : ""} onClick={() => setAccountSection("team")}>Rep accounts</button>}
+            </nav>
+            {accountError && <p className="error">{accountError}</p>}
+            {accountNotice && <p className="success">{accountNotice}</p>}
+            {accountSection === "profile" && <form className="inline-form" onSubmit={async (event) => { event.preventDefault(); setAccountError(""); try { await api("/api/account/password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) }); setCurrentPassword(""); setNewPassword(""); location.reload(); } catch (error) { setAccountError((error as Error).message); } }}>
+              <h2>Change password</h2>
+              <label>Current password<input type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} /></label>
+              <label>New password<input type="password" minLength={1} maxLength={256} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></label>
+              <div className="form-footer form-footer-right"><button className="primary account-submit">Update password</button></div>
+            </form>}
+            {role === "ADMIN" && <>
+              {accountSection === "pdf" && pdfHeader && <form className="inline-form" onSubmit={async (event) => { event.preventDefault(); setAccountError(""); setAccountNotice(""); setPdfHeaderBusy(true); try { const savedHeader = await api<Settings>("/api/settings/pdf-header", { method: "PUT", body: JSON.stringify({ shop_name: pdfHeader.shop_name, address: pdfHeader.address, phone: pdfHeader.phone, document_title: pdfHeader.pdf_document_title }) }); setPdfHeader(savedHeader); setAccountNotice("PDF header saved. It will be used for new orders; existing saved orders keep their header."); } catch (error) { setAccountError((error as Error).message); } finally { setPdfHeaderBusy(false); } }}>
+                <h2>PDF Header</h2>
+                <label>Shop/company name<input required maxLength={120} value={pdfHeader.shop_name} onChange={(event) => setPdfHeader({ ...pdfHeader, shop_name: event.target.value })} /></label>
+                <label>Address<textarea required maxLength={500} value={pdfHeader.address} onChange={(event) => setPdfHeader({ ...pdfHeader, address: event.target.value })} /></label>
+                <label>Phone<input required maxLength={60} value={pdfHeader.phone} onChange={(event) => setPdfHeader({ ...pdfHeader, phone: event.target.value })} /></label>
+                <label>Document title<input required maxLength={120} value={pdfHeader.pdf_document_title || "Purchase Order"} onChange={(event) => setPdfHeader({ ...pdfHeader, pdf_document_title: event.target.value })} /></label>
+                <div className="pdf-header-preview" aria-label="PDF header preview"><strong>{pdfHeader.shop_name || "Shop name"}</strong><span>{pdfHeader.address || "Address"}</span><span>{pdfHeader.phone || "Phone"}</span><b>{pdfHeader.pdf_document_title || "Purchase Order"}</b></div>
+                <div className="form-footer form-footer-right"><button className="primary account-submit" disabled={pdfHeaderBusy}>{pdfHeaderBusy ? "Saving…" : "Save PDF header"}</button></div>
+              </form>}
+              {accountSection === "team" && <><form className="inline-form" onSubmit={async (event) => { event.preventDefault(); setAccountError(""); try { await api("/api/accounts", { method: "POST", body: JSON.stringify({ username: accountUsername, password: accountPassword }) }); setAccountUsername(""); setAccountPassword(""); refreshAccounts(); } catch (error) { setAccountError((error as Error).message); } }}>
+                <h2>Create Rep account</h2>
+                <label>Username<input value={accountUsername} onChange={(event) => setAccountUsername(event.target.value)} /></label>
+                <label>Password<input type="password" minLength={1} maxLength={256} value={accountPassword} onChange={(event) => setAccountPassword(event.target.value)} /></label>
+                <div className="form-footer form-footer-right"><button className="primary account-submit">Create Rep</button></div>
+              </form>
+              <h2>Accounts</h2>
+              <div className="account-card-list">{accounts.map((account) => <article className="account-card" key={account.id}><div><strong>{account.username}</strong><small>{account.role}</small></div><span className={`status-badge ${account.active ? "status-active" : "status-hidden"}`}>{account.active ? "Active" : "Inactive"}</span><div className="account-card-actions"><button type="button" className={account.active ? "action-neutral" : "action-success"} disabled={account.id === 1 && account.active} onClick={async () => { setAccountError(""); setAccountNotice(""); try { await api(`/api/accounts/${account.id}`, { method: "PUT", body: JSON.stringify({ active: account.active ? 0 : 1 }) }); setAccountNotice(`${account.username} ${account.active ? "deactivated" : "activated"}.`); refreshAccounts(); } catch (error) { setAccountError((error as Error).message); } }}>{account.active ? "Deactivate" : "Activate"}</button><button type="button" onClick={async () => { const value = window.prompt(`New password for ${account.username}`); if (value === null) return; setAccountError(""); setAccountNotice(""); try { await api(`/api/accounts/${account.id}/reset-password`, { method: "POST", body: JSON.stringify({ password: value }) }); setAccountNotice(`Password reset for ${account.username}.`); } catch (error) { setAccountError((error as Error).message); } }}>Reset password</button>{account.role === "REP" && <button type="button" className="action-danger" disabled={deletingAccountId === account.id} onClick={async () => { if (!window.confirm(`Delete Rep ${account.username}? Their orders will be retained.`)) return; setDeletingAccountId(account.id); setAccountError(""); setAccountNotice(""); try { await api(`/api/accounts/${account.id}`, { method: "DELETE" }); await refreshAccounts(); setAccountNotice(`Rep ${account.username} deleted.`); } catch (error) { setAccountError((error as Error).message); } finally { setDeletingAccountId(null); } }}>{deletingAccountId === account.id ? "Deleting…" : "Delete Rep"}</button>}</div></article>)}</div>
+            </>}</>}
           </section>
         )}
         {saved && (
@@ -781,7 +954,7 @@ function App() {
               <p>
                 {saved.buyer_name} · {fmt(saved.total_minor)}
               </p>
-              <PDF q={saved} />
+              <PDF q={saved} header={pdfHeader} />
             </section>
           </div>
         )}
@@ -824,7 +997,7 @@ function Login() {
             <circle cx="24" cy="17" r="4" fill="#f58220" opacity=".7" />
             <circle cx="99" cy="54" r="5" fill="#d9eefe" />
           </svg>
-          <div><h1>Rich Time</h1><p>Sign in to manage orders.</p></div>
+          <div><h1>RSK Holdings</h1><p>Sign in to manage orders.</p></div>
         </div>
         <form
           onSubmit={async (x) => {

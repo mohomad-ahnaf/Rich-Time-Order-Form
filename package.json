@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "concurrently -k \"npm:dev:client\" \"npm:dev:worker\"",
     "dev:client": "vite --host 0.0.0.0",
-    "dev:worker": "wrangler dev --local --persist-to .wrangler/state",
+    "dev:worker": "set \"XDG_CONFIG_HOME=%CD%\\.wrangler\\xdg\" && wrangler dev --local --persist-to .wrangler/state --port 8787",
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "test": "vitest run",
     "db:migrate:local": "wrangler d1 migrations apply rich-time-db --local --persist-to .wrangler/state",
     "db:migrate:remote": "wrangler d1 migrations apply rich-time-db --remote",
+    "db:reset:local": "tsx scripts/reset-local-rsk-catalog.ts --confirm",
     "password:hash": "tsx scripts/hash-password.ts",
     "setup:credentials": "powershell -ExecutionPolicy Bypass -File scripts/setup-local-credentials.ps1",
     "seed:local": "tsx scripts/seed-local.ts",

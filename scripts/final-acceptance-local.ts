@@ -16,7 +16,8 @@ if (!env.OWNER_USERNAME || !env.SESSION_SECRET) {
 }
 
 const csrf = randomUUID();
-const payload = Buffer.from(JSON.stringify({ user: env.OWNER_USERNAME, exp: Date.now() + 60 * 60 * 1000, csrf })).toString("base64url");
+const ownerSessionVersion = Number(process.env.OWNER_SESSION_VERSION || "1");
+const payload = Buffer.from(JSON.stringify({ userId: 1, username: env.OWNER_USERNAME, role: "ADMIN", sessionVersion: ownerSessionVersion, exp: Date.now() + 60 * 60 * 1000, csrf })).toString("base64url");
 const signature = createHmac("sha256", env.SESSION_SECRET).update(payload).digest("base64url");
 const cookie = `rt_session=${payload}.${signature}`;
 const tag = `FINAL-ACCEPTANCE-${Date.now()}`;
@@ -64,8 +65,17 @@ const idempotencyKey = randomUUID();
 const payloadBody = { idempotencyKey, buyerId: buyer.id, quotationDate: "2026-11-04", items: [{ productId: product.id, quantity: 10 }] };
 const saved = await request("/api/quotations", "POST", payloadBody);
 assert(saved.response.status === 201 && saved.data.total_minor === 100000, "order save with backend total");
+assert(/^\d{4,}$/.test(saved.data.order_code || ""), "new order receives a numeric unique code");
 const repeated = await request("/api/quotations", "POST", payloadBody);
 assert(repeated.response.status === 200 && repeated.data.id === saved.data.id, "idempotent retry creates one order");
+assert(repeated.data.order_code === saved.data.order_code, "idempotent retry reuses the order code");
+const concurrentPayload = (idempotencyKey: string) => ({ ...payloadBody, idempotencyKey, items: [{ productId: product.id, quantity: 1 }] });
+const concurrent = await Promise.all([
+  request("/api/quotations", "POST", concurrentPayload(randomUUID())),
+  request("/api/quotations", "POST", concurrentPayload(randomUUID())),
+]);
+assert(concurrent.every((result) => result.response.status === 201), "concurrent order saves succeed");
+assert(new Set(concurrent.map((result) => result.data.order_code)).size === 2, "concurrent order saves receive unique codes");
 
 const productEdited = await request(`/api/products/${product.id}`, "PUT", { ...product, price_minor: 34567, active: 1 });
 assert(productEdited.response.status === 200, "product edit");
