@@ -1,0 +1,11 @@
+const base="http://127.0.0.1:8799", password="StorekeeperTest!2026";
+const pass=(v:unknown,m:string)=>{if(!v)throw Error(m);console.log(`PASS ${m}`)};
+async function login(username:string){const r=await fetch(`${base}/api/login`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({username,password})});pass(r.status===204,`${username} login`);const cookie=r.headers.get("set-cookie")!.split(";")[0];const s=await fetch(`${base}/api/session`,{headers:{cookie}});return {cookie,csrf:(await s.json()).csrfToken}}
+const call=(c:any,p:string,m="GET",b?:any)=>fetch(`${base}${p}`,{method:m,headers:{cookie:c.cookie,"x-csrf-token":c.csrf,...(b===undefined?{}:{"content-type":"application/json"})},body:b===undefined?undefined:JSON.stringify(b)});
+const admin=await login("Admin"),rep=await login("Rep A"),store=await login("Storekeeper Status");
+const adminList=await (await call(admin,"/api/quotations?status=dispatched")).json(); const aged=adminList[0]; pass(Boolean(aged),"Admin retains access to 30-day dispatched order");
+const repList=await (await call(rep,"/api/quotations?status=dispatched")).json(); pass(!repList.some((x:any)=>x.id===aged.id),"Rep list excludes order at 30-day dispatch boundary");
+const storeList=await (await call(store,"/api/quotations?status=dispatched")).json(); pass(!storeList.orders.some((x:any)=>x.id===aged.id),"Storekeeper list/counts exclude order at 30-day dispatch boundary");
+pass((await call(rep,`/api/quotations/${aged.id}`)).status===404,"Rep detail blocks expired dispatched order"); pass((await call(store,`/api/quotations/${aged.id}`)).status===404,"Storekeeper detail blocks expired dispatched order");
+const returned=await call(admin,`/api/quotations/${aged.id}/return-to-pending`,`POST`,{reason:"Age visibility test"});pass(returned.status===200,"Admin returns aged dispatched order to pending");
+const repPending=await (await call(rep,"/api/quotations?status=pending")).json();pass(repPending.some((x:any)=>x.id===aged.id),"Return to pending restores Rep eligibility"); const storePending=await (await call(store,"/api/quotations?status=pending")).json();pass(storePending.orders.some((x:any)=>x.id===aged.id),"Return to pending restores Storekeeper eligibility");

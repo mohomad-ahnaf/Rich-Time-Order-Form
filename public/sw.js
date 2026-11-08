@@ -1,4 +1,4 @@
-const CACHE_NAME = "rsk-holdings-shell-v1";
+const CACHE_NAME = "rsk-holdings-shell-v5";
 const SHELL = ["/", "/offline.html", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/icon-maskable-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -7,6 +7,10 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith("rsk-holdings-") && key !== CACHE_NAME).map((key) => caches.delete(key)))));
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("fetch", (event) => {

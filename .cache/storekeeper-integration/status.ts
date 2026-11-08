@@ -1,0 +1,24 @@
+const base = "http://127.0.0.1:8799";
+const password = "StorekeeperTest!2026";
+type Client = { cookie: string; csrf: string };
+const pass = (ok: unknown, label: string) => { if (!ok) throw new Error(label); console.log(`PASS ${label}`); };
+async function login(username: string) { const r = await fetch(`${base}/api/login`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ username, password }) }); pass(r.status === 204, `${username} login`); const cookie = r.headers.get("set-cookie")!.split(";")[0]; const s = await fetch(`${base}/api/session`, { headers: { cookie } }); return { cookie, csrf: (await s.json()).csrfToken } as Client; }
+const call = (c: Client, path: string, method = "GET", body?: unknown) => fetch(`${base}${path}`, { method, headers: { cookie: c.cookie, "x-csrf-token": c.csrf, ...(body === undefined ? {} : { "content-type": "application/json" }) }, body: body === undefined ? undefined : JSON.stringify(body) });
+const admin = await login("Admin"); const rep = await login("Rep A");
+let r = await call(admin, "/api/accounts", "POST", { username: "Storekeeper Status", password, role: "STOREKEEPER" }); pass(r.status === 201, "Admin creates status Storekeeper");
+const store = await login("Storekeeper Status");
+const buyers = await (await call(admin, "/api/buyers")).json(); const products = await (await call(admin, "/api/products")).json();
+const buyer = buyers[0], product = products[0];
+const make = async (key: string) => { const response = await call(rep, "/api/quotations", "POST", { idempotencyKey: key, buyerId: buyer.id, quotationDate: "2026-11-08", items: [{ productId: product.id, quantity: 1, unitPriceMinor: product.price_minor }] }); pass(response.status === 201, `Rep creates ${key.slice(0, 4)}`); return response.json(); };
+const first = await make("44444444-4444-4444-8444-444444444444"); const second = await make("55555555-5555-4555-8555-555555555555");
+let list = await (await call(rep, "/api/quotations?status=all")).json(); const i1 = list.findIndex((x: any) => x.id === second.id), i2 = list.findIndex((x: any) => x.id === first.id); pass(i1 >= 0 && i2 >= 0 && i1 < i2, "Newest orders sort first with ID tie-breaker");
+r = await call(admin, `/api/quotations/${first.id}/cancel`, "POST", { reason: "Isolated cancellation" }); pass(r.status === 200, "Admin cancels pending order");
+pass((await call(rep, `/api/quotations/${second.id}/cancel`, "POST", { reason: "no" })).status === 403, "Rep cannot cancel");
+pass((await call(store, `/api/quotations/${second.id}/cancel`, "POST", { reason: "no" })).status === 403, "Storekeeper cannot cancel");
+list = await (await call(rep, "/api/quotations?status=cancelled")).json(); pass(list.some((x: any) => x.id === first.id && x.cancelled_at), "Cancelled filter returns cancelled order");
+let detail = await (await call(store, `/api/quotations/${first.id}`)).json(); pass((await call(store, `/api/quotations/${first.id}/dispatch`, "POST", { notes: "no" })).status === 422, "Cancelled order cannot dispatch");
+let storeList = await (await call(store, "/api/quotations?status=all")).json(); pass(storeList.counts.cancelled >= 1 && storeList.orders.some((x: any) => x.id === first.id), "Storekeeper counts and status list include cancelled order without money");
+detail = await (await call(store, `/api/quotations/${second.id}`)).json();
+r = await call(store, `/api/quotations/${second.id}/packing`, "PUT", { version: detail.dispatch_version, items: detail.items.map((x: any) => ({ productId: x.product_id, checked: true })) }); pass(r.status === 200, "Storekeeper packs race-test order");
+const [cancelRace, dispatchRace] = await Promise.all([call(admin, `/api/quotations/${second.id}/cancel`, "POST", { reason: "race" }), call(store, `/api/quotations/${second.id}/dispatch`, "POST", { notes: "race" })]);
+pass([200, 422].includes(cancelRace.status) && [200, 422].includes(dispatchRace.status) && (cancelRace.status === 200 || dispatchRace.status === 200), "Cancel versus dispatch race has one valid transition");
