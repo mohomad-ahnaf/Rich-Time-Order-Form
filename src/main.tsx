@@ -27,6 +27,10 @@ import {
 } from "lucide-react";
 import type { Buyer, Product, Quotation, Settings } from "./types";
 import { orderFilename, orderReference } from "./order-reference";
+import "@fontsource/inter/latin-400.css";
+import "@fontsource/inter/latin-500.css";
+import "@fontsource/inter/latin-600.css";
+import "@fontsource/inter/latin-700.css";
 import "./styles.css";
 const table = (at as any).default,
   fmt = (n: number) =>
@@ -979,9 +983,19 @@ function RepHome({ orders, accounts }: { orders: any[]; accounts: any[] }) {
   }, [orders]);
   return <><section className="rep-home"><div className="section-heading"><h1 className="page-title"><BriefcaseBusiness aria-hidden="true" /> Home</h1></div><div className="rep-summary-grid"><button type="button" className="rep-summary all-summary" onClick={() => window.dispatchEvent(new CustomEvent("rsk-open-orders", { detail: "all" }))}><span>My orders</span><strong>{counts.all}</strong></button><button type="button" className="rep-summary pending-summary" onClick={() => window.dispatchEvent(new CustomEvent("rsk-open-orders", { detail: "pending" }))}><span>Pending orders</span><strong>{counts.pending}</strong></button><button type="button" className="rep-summary dispatched-summary" onClick={() => window.dispatchEvent(new CustomEvent("rsk-open-orders", { detail: "dispatched" }))}><span>Dispatched orders</span><strong>{counts.dispatched}</strong></button></div>{error && <p className="error">{error}</p>}</section><JobsPanel role="REP" accounts={accounts} home /></>;
 }
+function SessionSplash({ error, retry }: { error: string; retry: () => void }) {
+  return <main className="session-splash" aria-live="polite">
+    <div className="session-splash-content">
+      <img className="session-splash-wordmark" src="/rsk-holdings-wordmark.png" alt="RSK Holdings (PVT) LTD" />
+      {error ? <div className="session-splash-retry"><p>{error}</p><button type="button" className="primary" onClick={retry}>Retry</button></div> : <><span className="session-spinner" aria-hidden="true" /><p>Restoring your session…</p></>}
+    </div>
+  </main>;
+}
 function App() {
   const [ok, setOk] = useState(false),
     [sessionLoading, setSessionLoading] = useState(true),
+    [sessionError, setSessionError] = useState(""),
+    [sessionAttempt, setSessionAttempt] = useState(0),
     [role, setRole] = useState<"ADMIN" | "REP" | "STOREKEEPER">("REP"),
     [username, setUsername] = useState(""),
     [accounts, setAccounts] = useState<any[]>([]),
@@ -1063,29 +1077,57 @@ function App() {
     }));
   };
   useEffect(() => {
-    api<any>("/api/session")
-      .then((s) => {
+    let stale = false;
+    const startedAt = Date.now();
+    const waitForMinimumSplash = () => new Promise<void>((resolve) => window.setTimeout(resolve, Math.max(0, 1000 - (Date.now() - startedAt))));
+    const restore = async () => {
+      setSessionLoading(true);
+      setSessionError("");
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 12_000);
+      try {
+        const response = await fetch("/api/session", { headers: { "Content-Type": "application/json" }, signal: controller.signal });
+        if (response.status === 401 || response.status === 403) {
+          await waitForMinimumSplash();
+          if (!stale) { setOk(false); setSessionLoading(false); }
+          return;
+        }
+        if (!response.ok) throw Error(`Session restoration failed (${response.status}).`);
+        const s = await response.json();
         csrf = s.csrfToken;
         setRole(s.role);
         setUsername(s.username);
         const target = new URLSearchParams(location.search).get("notification");
         setPage(target === "order" ? "history" : target === "job" ? (s.role === "ADMIN" ? "jobs" : "home") : s.role === "STOREKEEPER" ? "dashboard" : s.role === "REP" ? "home" : "quote");
+        let initialDataTimer: number | undefined;
+        try {
+          const initialData = s.role === "STOREKEEPER"
+            ? Promise.resolve([[], [], null] as [Buyer[], Product[], Settings | null])
+            : Promise.all([api<Buyer[]>("/api/buyers"), api<Product[]>("/api/products"), api<Settings>("/api/settings")]) as Promise<[Buyer[], Product[], Settings | null]>;
+          const [buyers, products, settings] = await Promise.race([
+            initialData,
+            new Promise<never>((_, reject) => { initialDataTimer = window.setTimeout(() => reject(Object.assign(Error("Session restoration timed out."), { name: "AbortError" })), 12_000); }),
+          ]);
+          await waitForMinimumSplash();
+          if (stale) return;
+          setBs(buyers);
+          setPs(products);
+          setPdfHeader(settings);
+        } finally {
+          if (initialDataTimer) window.clearTimeout(initialDataTimer);
+        }
         setOk(true);
-        if (s.role === "STOREKEEPER") return Promise.resolve([[] as Buyer[], [] as Product[], null as Settings | null] as [Buyer[], Product[], Settings | null]);
-        return Promise.all([
-          api<Buyer[]>("/api/buyers"),
-          api<Product[]>("/api/products"),
-          api<Settings>("/api/settings"),
-        ]) as Promise<[Buyer[], Product[], Settings | null]>;
-      })
-      .then(([x, y, settings]) => {
-        setBs(x);
-        setPs(y);
-        setPdfHeader(settings);
-      })
-      .catch(() => setOk(false))
-      .finally(() => setSessionLoading(false));
-  }, []);
+        setSessionLoading(false);
+      } catch (reason) {
+        await waitForMinimumSplash();
+        if (!stale) setSessionError((reason as Error).name === "AbortError" ? "Session restoration timed out. Check your connection and try again." : "Could not restore your session. Your account has not been signed out.");
+      } finally {
+        window.clearTimeout(timeout);
+      }
+    };
+    void restore();
+    return () => { stale = true; };
+  }, [sessionAttempt]);
   useEffect(() => {
     // HTTPS development tunnels need a worker too; plain local Vite remains unaffected.
     if (!("serviceWorker" in navigator) || (!import.meta.env.PROD && !window.isSecureContext)) return;
@@ -1292,7 +1334,7 @@ function App() {
     document.addEventListener("focusin", keepVisible);
     return () => document.removeEventListener("focusin", keepVisible);
   }, []);
-  if (sessionLoading) return <main className="login-page"><section className="login-card" aria-live="polite"><h1>RSK Holdings</h1><p>Restoring your secure session…</p></section></main>;
+  if (sessionLoading) return <SessionSplash error={sessionError} retry={() => setSessionAttempt((attempt) => attempt + 1)} />;
   if (!ok) return <Login />;
   const unavailableItems = its.filter((item) => !ps.some((product) => product.id === item.p.id && product.active));
   const total = its.reduce((n, i) => n + i.unitPriceMinor * i.q, 0);
@@ -1385,25 +1427,29 @@ function App() {
     if (buyerForm !== undefined) setBuyerForm(undefined);
     setPage(nextPage);
   };
+  const logout = async () => {
+    if (buyerFormDirty && !window.confirm("Discard unsaved buyer changes and log out?")) return;
+    try {
+      const registration = await navigator.serviceWorker?.getRegistration();
+      const subscription = await registration?.pushManager.getSubscription();
+      if (subscription) await api("/api/push/subscriptions", { method: "DELETE", body: JSON.stringify({ endpoint: subscription.endpoint }) });
+      await (navigator as Navigator & { clearAppBadge?: () => Promise<void> }).clearAppBadge?.();
+    } catch {
+      // Logout must still succeed when Push is unavailable.
+    }
+    await api("/api/logout", { method: "POST" });
+    location.reload();
+  };
   return (
     <div className={`app-shell${keyboardOpen ? " keyboard-open" : ""}`}>
       <PwaUpdateNotice />
       <header className="topbar">
         <div className="topbar-identity">
-          <b>RSK Holdings</b>
+          <img className="brand-wordmark" src="/rsk-holdings-wordmark.png" alt="RSK Holdings (PVT) LTD" />
           <span title={username}>{username}</span>
         </div>
         <button className="header-action notification-bell" onClick={() => { setNotificationOpen((open) => !open); if (!notificationOpen) void refreshNotifications(); }} aria-label={`Notifications${unreadNotifications ? `, ${unreadNotifications} unread` : ""}`}><Bell />{unreadNotifications > 0 && <span className="notification-count">{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}</button>
         <button className="header-action" onClick={() => navigate("account")} aria-label="Settings"><SettingsIcon /></button>
-        <button
-          onClick={() =>
-            (!buyerFormDirty || window.confirm("Discard unsaved buyer changes and log out?")) &&
-            (async () => { try { const registration = await navigator.serviceWorker?.getRegistration(); const subscription = await registration?.pushManager.getSubscription(); if (subscription) await api("/api/push/subscriptions", { method: "DELETE", body: JSON.stringify({ endpoint: subscription.endpoint }) }); await (navigator as Navigator & { clearAppBadge?: () => Promise<void> }).clearAppBadge?.(); } catch { /* Logout must still succeed when Push is unavailable. */ } await api("/api/logout", { method: "POST" }); location.reload(); })()
-          }
-          className="header-action"
-          aria-label="Log out">
-          <LogOut />
-        </button>
       </header>
       <main className="app-main">
         {syncNotice && <p className="sync-notice" role="status">{syncNotice}</p>}
@@ -1456,7 +1502,7 @@ function App() {
                 {historyQuery && <button type="button" onClick={() => setHistoryQuery("")}>Clear search</button>}
               </div>
             </label>
-            <div className="account-tabs dispatch-tabs" aria-label="Order status"><button type="button" className={orderStatus === "all" ? "active" : ""} onClick={() => setOrderStatus("all")}>All</button><button type="button" className={orderStatus === "dispatched" ? "active" : ""} onClick={() => setOrderStatus("dispatched")}>Dispatched</button><button type="button" className={orderStatus === "pending" ? "active" : ""} onClick={() => setOrderStatus("pending")}>Pending</button><button type="button" className={orderStatus === "cancelled" ? "active" : ""} onClick={() => setOrderStatus("cancelled")}>Cancelled</button></div>
+            <div className="account-tabs dispatch-tabs" aria-label="Order status"><button type="button" className={orderStatus === "all" ? "active" : ""} onClick={() => setOrderStatus("all")}>All</button><button type="button" className={orderStatus === "pending" ? "active" : ""} onClick={() => setOrderStatus("pending")}>Pending</button><button type="button" className={orderStatus === "dispatched" ? "active" : ""} onClick={() => setOrderStatus("dispatched")}>Dispatched</button><button type="button" className={orderStatus === "cancelled" ? "active" : ""} onClick={() => setOrderStatus("cancelled")}>Cancelled</button></div>
             {historyLoading && <p>Loading orders…</p>}
             {historyError && <p className="error">{historyError}</p>}
             {!historyLoading && !historyError && !history.length && <p>No orders found.</p>}
@@ -1559,6 +1605,10 @@ function App() {
               <div className="form-footer form-footer-right"><button className="primary account-submit">Update password</button></div>
             </form>}
             {accountSection === "profile" && <PhoneNotificationControls />}
+            {accountSection === "profile" && <section className="account-signout" aria-label="Sign out">
+              <div><h2>Sign out</h2><p>Sign out of this device and disconnect its phone-notification subscription.</p></div>
+              <button type="button" className="account-signout-button" onClick={() => void logout()}><LogOut aria-hidden="true" /> Log out</button>
+            </section>}
             {role === "ADMIN" && <>
               {accountSection === "pdf" && pdfHeader && <form className="inline-form" onSubmit={async (event) => { event.preventDefault(); setAccountError(""); setAccountNotice(""); setPdfHeaderBusy(true); try { const savedHeader = await api<Settings>("/api/settings/pdf-header", { method: "PUT", body: JSON.stringify({ shop_name: pdfHeader.shop_name, address: pdfHeader.address, phone: pdfHeader.phone, document_title: pdfHeader.pdf_document_title }) }); setPdfHeader(savedHeader); setAccountNotice("PDF header saved. It will be used for new orders; existing saved orders keep their header."); } catch (error) { setAccountError((error as Error).message); } finally { setPdfHeaderBusy(false); } }}>
                 <h2>PDF Header</h2>
@@ -1666,15 +1716,8 @@ function Login() {
     <main className="login-page">
       <section className="login-card">
         <div className="login-brand">
-          <svg viewBox="0 0 120 76" role="img" aria-label="Analog watch illustration">
-            <circle cx="60" cy="38" r="27" fill="#edf6ff" stroke="#f58220" strokeWidth="4" />
-            <path d="M50 8h20M50 68h20" stroke="#092f64" strokeWidth="7" strokeLinecap="round" />
-            <circle cx="60" cy="38" r="3" fill="#092f64" />
-            <path d="M60 38V21M60 38l13 8" stroke="#092f64" strokeWidth="3" strokeLinecap="round" />
-            <circle cx="24" cy="17" r="4" fill="#f58220" opacity=".7" />
-            <circle cx="99" cy="54" r="5" fill="#d9eefe" />
-          </svg>
-          <div><h1>RSK Holdings</h1><p>Sign in to manage orders.</p></div>
+          <img className="login-wordmark" src="/rsk-holdings-wordmark.png" alt="RSK Holdings (PVT) LTD" />
+          <div><h1>Welcome back</h1><p>Sign in to manage orders.</p></div>
         </div>
         <form
           onSubmit={async (x) => {

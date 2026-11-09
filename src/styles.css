@@ -376,3 +376,162 @@ label { display:grid; gap:6px; margin:14px 0; color:#163e68; font-weight:700; }
   .account-card-actions { justify-content:flex-start; }
   .pwa-controls { right:max(16px, calc(50% - 410px)); }
 }
+
+/* RSK Holdings dark-blue application theme.  Kept below feature styles so it
+   can recolour existing workflows without changing their structure. */
+:root {
+  --navy-950: #08142d;
+  --navy-800: #111f40;
+  --navy-700: #4d7ef3;
+  --ink: #f3f6ff;
+  --muted: #aab9d6;
+  --page: #08142d;
+  --panel: #111f40;
+  --panel-raised: #192d55;
+  --panel-selected: #213b70;
+  --border: rgb(128 165 234 / 24%);
+  --border-strong: rgb(137 174 244 / 52%);
+  --primary: #4d7ef3;
+  --primary-pressed: #3968d9;
+  --danger: #ff737d;
+  --success: #59d792;
+  --shadow-sm: 0 8px 22px rgb(0 4 18 / 25%);
+  --shadow-md: 0 18px 42px rgb(0 3 16 / 42%);
+  color: var(--ink);
+  background: var(--page);
+}
+
+body { background: radial-gradient(90rem 38rem at 80% -14%, rgb(77 126 243 / 16%), transparent 56%), var(--page); color: var(--ink); }
+button, input, textarea, select { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+button { border: 1px solid transparent; font-weight: 650; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline-color: rgb(126 166 255 / 92%); }
+input, textarea, select { border-color: var(--border); background: rgb(11 27 59 / 84%); color: var(--ink); caret-color: #dbe7ff; }
+input::placeholder, textarea::placeholder { color: #91a2c5; opacity: 1; }
+input:focus, textarea:focus, select:focus { border-color: #759af8; box-shadow: 0 0 0 3px rgb(77 126 243 / 20%); }
+
+.app-shell { background: transparent; }
+.topbar { background: linear-gradient(110deg, #08142d, #102757 68%, #0e234b); border-color: rgb(135 170 236 / 23%); box-shadow: 0 5px 22px rgb(0 3 16 / 45%); }
+.topbar-identity { align-items: center; gap: 10px; }
+.brand-wordmark { display: block; width: min(142px, 43vw); height: 34px; object-fit: contain; object-position: left center; filter: drop-shadow(0 1px 5px rgb(0 0 0 / 30%)); }
+.topbar-identity span { color: #b9c9e8; font-size: 12px; }
+.topbar button { color: #dce8ff; }
+.topbar button:hover { background: rgb(117 154 248 / 17%); }
+.notification-count { border-color: #13285a; background: var(--primary); color: white; }
+.app-main { padding-top: 18px; }
+
+.quote-page, .list-page { background: linear-gradient(145deg, rgb(25 45 85 / 97%), rgb(14 29 62 / 98%)); border-color: var(--border); box-shadow: var(--shadow-sm); }
+h1, h2, .page-title { color: #f4f7ff; letter-spacing: -.025em; }
+h1 { font-weight: 700; }
+.page-title svg { color: #85a8ff; }
+label { color: #d9e5fc; font-weight: 650; }
+.inline-form, .job-assignment-form { background: rgb(9 24 53 / 60%); border-color: var(--border); box-shadow: none; }
+.pdf-header-preview { background: rgb(77 126 243 / 10%); border-color: rgb(126 166 255 / 45%); color: #eaf0ff; }
+.pdf-header-preview span { color: var(--muted); }
+
+.primary, .pdf-actions button, .form-footer > .account-submit, .pwa-controls button.primary { background: linear-gradient(135deg, #5c8cff, #3d70e8); color: white; box-shadow: 0 6px 17px rgb(52 101 225 / 31%); }
+.primary:hover, .pdf-actions button:hover, .form-footer > .account-submit:hover, .pwa-controls button.primary:hover { background: linear-gradient(135deg, #76a0ff, #4d7ef3); box-shadow: 0 8px 20px rgb(52 101 225 / 42%); }
+.primary:active, .pdf-actions button:active { background: var(--primary-pressed); }
+.add-row, .buyer-add-row, .history-search button, .product-sheet-heading button, .form-footer > button:first-child:not(.account-submit), .dialog-close { background: rgb(77 126 243 / 13%)!important; border-color: rgb(116 155 246 / 24%); color: #cddcff!important; }
+.add-row:hover, .buyer-add-row:hover, .history-search button:hover, .product-sheet-heading button:hover { background: rgb(77 126 243 / 22%)!important; }
+
+.picker-popover, .product-sheet, .quote-dialog, .item-entry-dialog { background: #142952; border: 1px solid var(--border); box-shadow: var(--shadow-md); color: var(--ink); }
+.picker-popover { box-shadow: 0 18px 40px rgb(0 3 16 / 48%); }
+.picker-popover button, .product-results button { background: #142952; border-color: var(--border); color: var(--ink); }
+.picker-popover button:hover, .picker-popover button:focus-visible, .product-results button:hover, .product-results button:focus-visible { background: #203d73; }
+.picker-popover small, .product-results small, .item-description small, .item-card-details small { color: var(--muted); }
+.product-sheet-backdrop, .modal-backdrop { background: rgb(1 7 20 / 72%); }
+
+.item-card, .product-card, .account-card, .job-card, .history-card { background: linear-gradient(145deg, rgb(26 47 88 / 93%), rgb(14 30 64 / 97%)); border-color: var(--border); box-shadow: 0 5px 14px rgb(0 3 16 / 16%); color: var(--ink); }
+.item-card-top, .item-card-details span, .product-row, .history-card, .review-line { border-color: rgb(137 169 229 / 16%); background: transparent; color: var(--ink); }
+.item-number { background: rgb(77 126 243 / 18%); color: #d9e6ff; }
+.item-description, .item-card-details span, .product-card-price, .order-card-open b, .job-progress b { color: #f2f6ff; }
+.remove-item { background: rgb(255 115 125 / 12%); color: #ffabb1; }
+.field-error, .error { color: #ff9aa3!important; }
+.success { color: #74e7a5; }
+
+.quote-total { background: linear-gradient(100deg, #0d2148, #17386f); border-top: 1px solid rgb(117 154 248 / 34%); box-shadow: 0 -7px 24px rgb(0 3 16 / 45%); }
+.quote-total .primary { background: linear-gradient(135deg, #5c8cff, #3d70e8); }
+.bottom-nav { background: #0d2047; border-color: rgb(127 165 234 / 24%); box-shadow: 0 -6px 24px rgb(0 3 16 / 46%); }
+.bottom-nav button { color: #9fb2d6; }
+.bottom-nav button.active { background: linear-gradient(145deg, #294d8e, #1d396d); color: #f4f7ff; }
+
+.order-history-card { border-color: var(--border); background: #142952; }
+.order-hidden { background: #1b263b; border-color: rgb(173 190 220 / 20%); }
+.order-dispatched { background: linear-gradient(135deg, #143f39, #123331); border-color: rgb(89 215 146 / 31%); }
+.order-pending { background: linear-gradient(135deg, #4a351f, #382717); border-color: rgb(251 184 90 / 34%); }
+.order-cancelled { background: linear-gradient(135deg, #4b2630, #351a24); border-color: rgb(255 115 125 / 34%); }
+.order-card-open { color: var(--ink); }
+.order-card-open:hover, .order-card-open:focus-visible { background: rgb(112 150 238 / 13%); }
+.order-card-open .order-card-date, .product-card small, .account-card small, .job-card-open small { color: #aab9d6; }
+.order-card-actions { background: rgb(9 21 46 / 72%); border-color: rgb(146 178 239 / 16%); }
+.status-active { background: rgb(58 185 119 / 22%); color: #8ff0b5; }
+.status-hidden { background: rgb(180 194 220 / 15%); color: #d1d9ea; }
+.status-pending { background: rgb(255 180 69 / 19%); color: #ffd18a; }
+.status-danger { background: rgb(255 100 113 / 17%); color: #ffb2ba; }
+
+.product-card-actions .action-edit { background: rgb(77 126 243 / 16%); color: #9dbaff; }
+.product-card-actions .action-neutral, .order-card-actions .action-neutral, .account-card-actions .action-neutral { background: rgb(175 193 225 / 12%); color: #c9d6ef; }
+.product-card-actions .action-success, .order-card-actions .action-success, .account-card-actions .action-success { background: rgb(67 201 128 / 16%); color: #8de9b1; }
+.product-card-actions .action-danger, .order-card-actions .action-danger, .account-card-actions .action-danger { background: rgb(255 101 113 / 15%); color: #ff9ea8; }
+.account-card-actions { border-color: rgb(137 169 229 / 16%); }
+.account-card-actions button { background: rgb(77 126 243 / 12%); color: #d7e4ff; }
+
+.job-buyer-preview, .dispatch-checklist label { background: rgb(9 24 53 / 65%); border-color: var(--border); }
+.job-active { background: linear-gradient(135deg, #4a351f, #382717); border-color: rgb(251 184 90 / 34%); }
+.job-completed { background: linear-gradient(135deg, #143f39, #123331); border-color: rgb(89 215 146 / 31%); }
+.job-cancelled { background: linear-gradient(135deg, #4b2630, #351a24); border-color: rgb(255 115 125 / 34%); }
+.all-summary { background: rgb(77 126 243 / 17%); color: #d9e6ff; }
+.pending-summary { background: rgb(255 180 69 / 17%); color: #ffd18a; }
+.dispatched-summary { background: rgb(67 201 128 / 16%); color: #a0f2be; }
+.rep-summary { border-color: var(--border); }
+.job-checklist label { border-color: rgb(137 169 229 / 16%); }
+.job-checklist label.visited > span:nth-child(2) { background: rgb(67 201 128 / 18%); color: #82eaaa; }
+
+.account-tabs { background: rgb(7 20 46 / 62%); border-color: var(--border); }
+.account-tabs button { color: var(--muted); }
+.account-tabs button.active { background: #234477; color: #fff; box-shadow: none; }
+.notification-row { background: rgb(13 30 63 / 92%); border-color: var(--border); color: var(--ink); }
+.notification-row.unread, .foreground-notice { background: rgb(42 76 139 / 54%); border-color: rgb(121 160 248 / 38%); color: #edf3ff; }
+.notification-row > svg { color: #91b1ff; }
+.foreground-notice button { background: rgb(77 126 243 / 22%); color: #e7efff; }
+.sync-notice { background: rgb(255 180 69 / 14%); border-color: rgb(255 180 69 / 30%); color: #ffdb9c; }
+.phone-notification-controls { background: rgb(10 25 55 / 68%); border-color: var(--border); }
+.account-signout { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:16px; padding:15px; border:1px solid rgb(255 115 125 / 28%); border-radius:14px; background:rgb(90 27 42 / 28%); }
+.account-signout > div { min-width:0; }
+.account-signout h2 { margin:0; color:#ffe1e5; font-size:17px; }
+.account-signout p { margin:4px 0 0; color:#d9b6c0; font-size:13px; line-height:1.4; }
+.account-signout-button { flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:44px; padding:10px 13px; border-color:rgb(255 136 146 / 35%); background:rgb(255 101 113 / 16%); color:#ffb2ba; }
+.account-signout-button:hover { background:rgb(255 101 113 / 26%); color:#fff0f2; }
+.account-signout-button svg { width:18px; height:18px; }
+
+/* PDF content remains a white print document; only the preview chrome is dark. */
+.html-order-preview { background: #fff; color: #232a30; border-color: #cfd8df; }
+.html-order-preview h2, .html-order-preview strong, .html-order-preview th, .html-order-preview td { color: #232a30; }
+.draft-preview-dialog > .form-footer { background: #142952; border-color: var(--border); }
+
+.login-page, .session-splash { position:relative; isolation:isolate; min-height:100dvh; display:grid; place-items:center; overflow:hidden; padding:max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); background:#08142d url("/rsk-brand-background.png") center / cover no-repeat; }
+.login-page::before, .session-splash::before { position:absolute; z-index:-1; inset:0; content:""; background:linear-gradient(145deg, rgb(2 10 29 / 40%), rgb(8 20 45 / 18%)); pointer-events:none; }
+.login-page::after { display:none; }
+.login-card { width:min(100%,420px); padding:24px; background:linear-gradient(145deg, rgb(21 42 79 / 96%), rgb(11 27 59 / 97%)); border-color:rgb(143 179 247 / 30%); box-shadow:0 24px 54px rgb(0 3 16 / 52%); }
+.login-brand { display:grid; justify-items:center; gap:10px; margin:0 0 20px; text-align:center; }
+.login-wordmark { display:block; width:min(100%,290px); height:70px; object-fit:contain; object-position:center; margin:0; filter:drop-shadow(0 3px 9px rgb(0 0 0 / 30%)); }
+.login-brand h1 { margin:0; color:#f3f6ff; font-size:24px; }
+.login-brand p { margin:0; color:#aab9d6; font-size:15px; }
+.login-card form { display:grid; gap:2px; }
+.login-card label { margin:9px 0; text-align:left; }
+.login-card .full { margin-top:12px; }
+.session-splash-content { display:grid; justify-items:center; gap:18px; width:min(100%,360px); padding:calc(18px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom)); text-align:center; }
+.session-splash-wordmark { display:block; width:min(100%,300px); height:auto; max-height:105px; object-fit:contain; filter:drop-shadow(0 4px 12px rgb(0 0 0 / 35%)); }
+.session-splash-content > p { margin:0; color:#d9e5fc; font-size:14px; }
+.session-spinner { width:24px; height:24px; border:2px solid rgb(209 224 255 / 34%); border-top-color:#fff; border-radius:50%; animation:session-spin .8s linear infinite; }
+.session-splash-retry { display:grid; justify-items:center; gap:14px; }
+.session-splash-retry p { margin:0; color:#ffd3d7; font-size:14px; }
+@keyframes session-spin { to { transform:rotate(360deg); } }
+@media (prefers-reduced-motion:reduce) { .session-spinner { animation:none; border-top-color:rgb(209 224 255 / 34%); } }
+@media (max-width:380px) { .login-card { padding:20px; } .login-wordmark { height:58px; } .session-splash-wordmark { max-height:84px; } }
+@media (max-width:380px) { .account-signout { align-items:flex-start; flex-direction:column; } .account-signout-button { width:100%; } }
+.password-field button { color:#a9c2ff; }
+
+@media (hover:hover) {
+  .history-card:hover, .product-card:hover, .account-card:hover, .job-card:hover, .item-card:hover { border-color: rgb(130 168 242 / 48%); box-shadow: 0 9px 22px rgb(0 3 16 / 24%); }
+}

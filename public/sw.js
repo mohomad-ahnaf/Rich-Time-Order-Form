@@ -1,5 +1,5 @@
-const CACHE_NAME = "rsk-holdings-shell-v9";
-const SHELL = ["/", "/offline.html", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/icon-maskable-512.png"];
+const CACHE_NAME = "rsk-holdings-shell-v12";
+const SHELL = ["/", "/offline.html", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/icon-maskable-512.png", "/apple-touch-icon.png", "/favicon-48.png", "/rsk-holdings-wordmark.png", "/rsk-brand-background.png"];
 const PUSH_DIAGNOSTIC_URL = "/__rsk_push_diagnostics";
 async function recordPushDiagnostic(stage) {
   const cache = await caches.open(CACHE_NAME);
