@@ -18,6 +18,12 @@ import {
   Pencil,
   Trash2,
   Settings as SettingsIcon,
+  BriefcaseBusiness,
+  MapPin,
+  CheckCircle2,
+  Circle,
+  Bell,
+  CheckCheck,
 } from "lucide-react";
 import type { Buyer, Product, Quotation, Settings } from "./types";
 import { orderFilename, orderReference } from "./order-reference";
@@ -74,6 +80,8 @@ async function api<T>(u: string, o: RequestInit = {}): Promise<T> {
   return r.status === 204 ? (undefined as T) : r.json();
 }
 type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
+type JobItem = { id: number; buyer_id: number | null; buyer_name: string; buyer_address: string; visited_at: string | null; visited_by_username: string | null; version: number };
+type Job = { id: number; title: string; location_query: string; instructions?: string | null; due_date?: string | null; assigned_rep_user_id: number | null; assigned_rep_username: string; status: "ACTIVE" | "COMPLETED" | "CANCELLED"; version: number; cancelled_at?: string | null; cancellation_reason?: string | null; created_at: string; visited_count?: number; item_count?: number; progress?: { visited: number; total: number }; items?: JobItem[] };
 function OrderDocumentPreview({ q, header }: { q: Quotation; header?: Settings | null }) {
   const headerName = q.shop_name?.trim() || header?.shop_name || "RSK Holdings";
   const headerAddress = q.shop_address?.trim() || header?.address || "";
@@ -489,6 +497,76 @@ function ProductForm({ product, complete, cancel }: { product: Product | null; c
     <div className="form-footer"><button type="button" onClick={cancel}>Cancel</button><button className="primary" disabled={busy}>{busy ? "Saving…" : "Save product"}</button></div>
   </form>;
 }
+const withTimeout = <T,>(promise: Promise<T>, label: string, ms = 12000) => Promise.race<T>([promise, new Promise<T>((_, reject) => window.setTimeout(() => reject(Error(`${label} timed out. Check the HTTPS tunnel and try again.`)), ms))]);
+async function readyServiceWorker(stage: (message: string) => void) {
+  stage("Checking the service worker…");
+  const response = await withTimeout(fetch("/sw.js", { cache: "no-store" }), "Service-worker check");
+  if (!response.ok || !/javascript/i.test(response.headers.get("content-type") || "")) throw Error("The tunnel did not serve /sw.js as JavaScript. Check the tunnel route.");
+  stage("Registering the service worker…");
+  const registration = await withTimeout(navigator.serviceWorker.register("/sw.js", { scope: "/" }), "Service-worker registration");
+  stage("Activating the service worker…");
+  await withTimeout(navigator.serviceWorker.ready, "Service-worker activation");
+  return registration;
+}
+function PhoneNotificationControls() {
+  const [status, setStatus] = useState<"loading" | "enabled" | "disabled" | "unsupported" | "denied" | "unavailable">("loading");
+  const [message, setMessage] = useState(""); const [stage, setStage] = useState("");
+  const [displayDiagnostic, setDisplayDiagnostic] = useState("");
+  const [busy, setBusy] = useState(false);
+  const supported = typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  const update = async () => {
+    if (!supported) { setStatus("unsupported"); return; }
+    if (!window.isSecureContext && location.hostname !== "localhost") { setStatus("unavailable"); return; }
+    if (Notification.permission === "denied") { setStatus("denied"); return; }
+    try { const registration = await readyServiceWorker(setStage); setStatus(await registration.pushManager.getSubscription() ? "enabled" : "disabled"); }
+    finally { setStage(""); }
+  };
+  useEffect(() => { void update().catch(() => setStatus("unavailable")); }, []);
+  const enable = async () => {
+    setBusy(true); setMessage(""); setStage("");
+    try {
+      if (!supported) { setStatus("unsupported"); return; }
+      if (!window.isSecureContext && location.hostname !== "localhost") { setStatus("unavailable"); return; }
+      setStage("Waiting for notification permission…");
+      const permission = await withTimeout(Notification.requestPermission(), "Notification permission", 15000);
+      if (permission !== "granted") { setStatus("denied"); return; }
+      setStage("Loading phone-notification settings…");
+      const key = await withTimeout(api<{ publicKey: string }>("/api/push/public-key"), "VAPID key request");
+      const bytes = Uint8Array.from(atob(key.publicKey.replace(/-/g, "+").replace(/_/g, "/")), (char) => char.charCodeAt(0));
+      const registration = await readyServiceWorker(setStage);
+      setStage("Creating this device subscription…");
+      const subscription = await withTimeout(registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes }), "Phone subscription", 15000);
+      setStage("Saving this device securely…");
+      await withTimeout(api("/api/push/subscriptions", { method: "POST", body: JSON.stringify(subscription.toJSON()) }), "Subscription save");
+      setStatus("enabled"); setMessage("Phone notifications are enabled for this device.");
+    } catch (error) { setStatus("disabled"); setMessage((error as Error).message || "Phone notifications could not be enabled."); }
+    finally { setStage(""); setBusy(false); }
+  };
+  const disable = async () => {
+    setBusy(true); setMessage("");
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (subscription) { await api("/api/push/subscriptions", { method: "DELETE", body: JSON.stringify({ endpoint: subscription.endpoint }) }); await subscription.unsubscribe(); }
+      setStatus("disabled"); setMessage("Phone notifications are disabled for this device only.");
+    } catch (error) { setMessage((error as Error).message || "Phone notifications could not be disabled."); }
+    finally { setBusy(false); }
+  };
+  const sendTest = async () => {
+    setBusy(true); setMessage(""); setStage("Sending a real test notification…");
+    try { const registration = await readyServiceWorker(setStage); const subscription = await registration.pushManager.getSubscription(); if (!subscription) throw Error("This device has no active browser subscription. Disable and enable notifications again."); const appKey = subscription.options.applicationServerKey; if (!appKey) throw Error("This device subscription has no application key. Disable and enable notifications again."); const serverKey = btoa(String.fromCharCode(...new Uint8Array(appKey))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, ""); const result = await api<{ status: string; detail: string }>("/api/push/test", { method: "POST", body: JSON.stringify({ endpoint: subscription.endpoint, applicationServerKey: serverKey }) }); setMessage(result.detail); }
+    catch (error) { setMessage((error as Error).message || "Test notification failed."); }
+    finally { setStage(""); setBusy(false); }
+  };
+  const testDisplay = async () => {
+    setBusy(true); setMessage(""); setStage("Requesting a local system notification…");
+    try { const registration = await readyServiceWorker(setStage); await withTimeout(registration.showNotification("RSK Holdings", { body: "Local display test — no push provider was contacted.", icon: "/icon-192.png", tag: `rsk-local-display-${Date.now()}` }), "Local notification display", 10000); setDisplayDiagnostic("Local showNotification resolved."); }
+    catch (error) { setDisplayDiagnostic((error as Error).message || "Local notification display failed."); }
+    finally { setStage(""); setBusy(false); }
+  };
+  const ios = /iPad|iPhone|iPod/.test(navigator.userAgent); const installed = Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+  return <section className="phone-notification-controls" aria-live="polite"><h2>Phone notifications</h2>{ios && !installed && <p>On iPhone, use Safari Share → Add to Home Screen, then open the installed app to enable notifications.</p>}{status === "loading" && <p>Checking this device…</p>}{status === "unsupported" && <p>Your browser does not support phone notifications.</p>}{status === "unavailable" && <p>Phone notifications require HTTPS (or localhost during development).</p>}{status === "denied" && <p>Notifications are blocked. Allow them in this browser’s site settings to enable this device.</p>}{status === "enabled" && <p>Enabled for this device.</p>}{status === "disabled" && <p>Disabled for this device.</p>}{stage && <p>{stage}</p>}{message && <p className={status === "enabled" ? "success" : "error"}>{message}</p>}{displayDiagnostic && <p>{displayDiagnostic}</p>}{status === "enabled" ? <><button type="button" className="action-neutral" disabled={busy} onClick={() => void disable()}>{busy ? "Disabling…" : "Disable phone notifications"}</button><button type="button" className="primary account-submit" disabled={busy} onClick={() => void testDisplay()}>Test notification display</button><button type="button" className="primary account-submit" disabled={busy} onClick={() => void sendTest()}>Send test notification</button></> : <button type="button" className="primary account-submit" disabled={busy || status === "unsupported" || status === "unavailable" || status === "denied" || (ios && !installed)} onClick={() => void enable()}>{busy ? stage || "Enabling…" : message ? "Retry phone notifications" : "Enable phone notifications"}</button>}</section>;
+}
 function BuyerPicker({ buyers, selected, select, add }: { buyers: Buyer[]; selected: any; select: (b: Buyer | null) => void; add: () => void }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -794,8 +872,116 @@ function ItemsTable({
     </>
   );
 }
+function JobsPanel({ role, accounts, home = false }: { role: "ADMIN" | "REP"; accounts: any[]; home?: boolean }) {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [filter, setFilter] = useState<"all" | "active" | "completed" | "cancelled">("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [openJob, setOpenJob] = useState<Job | null>(null);
+  const [busyItem, setBusyItem] = useState<number | null>(null);
+  const [repId, setRepId] = useState("");
+  const [title, setTitle] = useState("");
+  const [location, setLocation] = useState("");
+  const [instructions, setInstructions] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [candidates, setCandidates] = useState<Array<Pick<Buyer, "id" | "full_name" | "address">>>([]);
+  const [selectedBuyerIds, setSelectedBuyerIds] = useState<number[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [assignmentKey, setAssignmentKey] = useState(() => crypto.randomUUID());
+  const [assignmentOpen, setAssignmentOpen] = useState(false);
+  const request = useRef(0);
+  const refresh = async (quiet = false) => {
+    const current = ++request.current;
+    if (!quiet) setLoading(true);
+    try {
+      const result = await api<Job[]>(`/api/jobs?status=${filter}`);
+      if (current === request.current) { setJobs(result); setError(""); }
+    } catch (reason) { if (current === request.current) setError((reason as Error).message); }
+    finally { if (current === request.current && !quiet) setLoading(false); }
+  };
+  useEffect(() => { void refresh(); }, [filter]);
+  useEffect(() => {
+    let disposed = false;
+    const update = () => { if (!disposed && document.visibilityState === "visible") void refresh(true); };
+    const interval = window.setInterval(update, 15000);
+    window.addEventListener("focus", update); window.addEventListener("online", update); document.addEventListener("visibilitychange", update);
+    return () => { disposed = true; window.clearInterval(interval); window.removeEventListener("focus", update); window.removeEventListener("online", update); document.removeEventListener("visibilitychange", update); };
+  }, [filter]);
+  useEffect(() => {
+    if (role !== "ADMIN") return;
+    let stale = false;
+    const timer = window.setTimeout(() => {
+      api<Array<Pick<Buyer, "id" | "full_name" | "address">>>(`/api/jobs/buyer-preview?q=${encodeURIComponent(location)}`)
+        .then((rows) => { if (!stale) setCandidates(rows); })
+        .catch((reason) => { if (!stale) setError((reason as Error).message); });
+    }, 250);
+    return () => { stale = true; window.clearTimeout(timer); };
+  }, [role, location]);
+  const showJob = async (id: number) => {
+    try { setOpenJob(await api<Job>(`/api/jobs/${id}`)); setError(""); }
+    catch (reason) { setError((reason as Error).message); }
+  };
+  const toggleVisit = async (item: JobItem, visited: boolean) => {
+    if (!openJob || busyItem) return;
+    const previous = openJob;
+    setBusyItem(item.id);
+    setOpenJob({ ...previous, items: previous.items?.map((current) => current.id === item.id ? { ...current, visited_at: visited ? new Date().toISOString() : null, visited_by_username: visited ? "You" : null } : current) });
+    try {
+      const updated = await api<Job>(`/api/jobs/${previous.id}/items/${item.id}`, { method: "PUT", body: JSON.stringify({ visited, version: item.version }) });
+      setOpenJob(updated); await refresh(true);
+    } catch (reason) { setOpenJob(previous); setError((reason as Error).message); }
+    finally { setBusyItem(null); }
+  };
+  const createJob = async () => {
+    if (!repId || !title.trim() || !location.trim() || !selectedBuyerIds.length) { setError("Select an active Rep, enter a title and address search, then select at least one buyer."); return; }
+    setSubmitting(true); setError("");
+    try {
+      await api<Job>("/api/jobs", { method: "POST", body: JSON.stringify({ idempotencyKey: assignmentKey, repId: Number(repId), title, locationQuery: location, instructions, dueDate: dueDate || null, buyerIds: selectedBuyerIds }) });
+      setRepId(""); setTitle(""); setLocation(""); setInstructions(""); setDueDate(""); setCandidates([]); setSelectedBuyerIds([]); setAssignmentKey(crypto.randomUUID()); setAssignmentOpen(false); await refresh(true);
+    } catch (reason) { setError((reason as Error).message); }
+    finally { setSubmitting(false); }
+  };
+  const activeReps = accounts.filter((account) => account.role === "REP" && account.active);
+  return <section className={home ? "jobs-panel jobs-panel-home" : "jobs-panel"}>
+    <div className="section-heading"><h1 className="page-title"><BriefcaseBusiness aria-hidden="true" /> {home ? "My Jobs" : "Jobs"}</h1>{role === "ADMIN" && <button type="button" className="add-row" onClick={() => setAssignmentOpen(true)}><Plus aria-hidden="true" /> Assign job</button>}</div>
+    {role === "ADMIN" && assignmentOpen && <div className="quote-dialog-backdrop" onClick={() => setAssignmentOpen(false)}><section className="quote-dialog job-assignment-dialog" role="dialog" aria-modal="true" aria-label="Assign a job" onClick={(event) => event.stopPropagation()}>
+      <button type="button" className="dialog-close" aria-label="Close assignment form" onClick={() => setAssignmentOpen(false)}><X aria-hidden="true" /></button>
+      <h2>Assign a job</h2>
+      <label>Rep<select value={repId} onChange={(event) => setRepId(event.target.value)}><option value="">Select active Rep</option>{activeReps.map((rep) => <option key={rep.id} value={rep.id}>{rep.username}</option>)}</select></label>
+      <label>Job title<input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={200} /></label>
+      <label>Address/location search<input placeholder="For example: Kandy" value={location} onChange={(event) => setLocation(event.target.value)} maxLength={200} /></label>
+      <label>Instructions (optional)<textarea value={instructions} onChange={(event) => setInstructions(event.target.value)} maxLength={2000} /></label>
+      <label>Due date (optional)<input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></label>
+      <div className="job-buyer-preview"><strong>Matching active buyers</strong>{candidates.length ? candidates.map((buyer) => <label key={buyer.id} className="job-buyer-choice"><input type="checkbox" checked={selectedBuyerIds.includes(buyer.id)} onChange={() => setSelectedBuyerIds((current) => current.includes(buyer.id) ? current.filter((id) => id !== buyer.id) : [...current, buyer.id])} /><span><b>{buyer.full_name}</b><small className="preserve-lines">{buyer.address}</small></span></label>) : <p>Search an address to preview buyers.</p>}</div>
+      <div className="form-footer form-footer-right"><button type="button" onClick={() => setAssignmentOpen(false)}>Cancel</button><button type="button" className="primary" disabled={submitting || !selectedBuyerIds.length} onClick={createJob}>{submitting ? "Assigning…" : `Assign job${selectedBuyerIds.length ? ` (${selectedBuyerIds.length})` : ""}`}</button></div>
+    </section></div>}
+    {role === "REP" && <div className="account-tabs job-tabs" aria-label="My jobs filter"><button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>All</button><button className={filter === "active" ? "active" : ""} onClick={() => setFilter("active")}>Active</button><button className={filter === "completed" ? "active" : ""} onClick={() => setFilter("completed")}>Completed</button></div>}
+    {role === "ADMIN" && <div className="account-tabs job-tabs" aria-label="Jobs filter"><button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>All</button><button className={filter === "active" ? "active" : ""} onClick={() => setFilter("active")}>Active</button><button className={filter === "completed" ? "active" : ""} onClick={() => setFilter("completed")}>Completed</button><button className={filter === "cancelled" ? "active" : ""} onClick={() => setFilter("cancelled")}>Cancelled</button></div>}
+    {error && <p className="error">{error}</p>}{loading && <p>Loading jobs…</p>}{!loading && !jobs.length && <p className="empty-state">{role === "REP" ? "No jobs are assigned to you." : "No jobs found."}</p>}
+    <div className="job-list">{jobs.map((job) => <article className={`job-card job-${job.status.toLowerCase()}`} key={job.id}><button type="button" className="job-card-open" onClick={() => void showJob(job.id)}><span><strong>{job.title}</strong><small><MapPin aria-hidden="true" /> {job.location_query}</small><small>{role === "ADMIN" ? `Rep: ${job.assigned_rep_username}` : job.due_date ? `Due ${job.due_date}` : "No due date"}</small></span><span className="job-progress"><b>{job.visited_count ?? job.progress?.visited ?? 0} of {job.item_count ?? job.progress?.total ?? 0}</b><small>shops visited</small><span className={`status-badge ${job.status === "COMPLETED" ? "status-active" : job.status === "CANCELLED" ? "status-danger" : "status-pending"}`}>{job.status[0] + job.status.slice(1).toLowerCase()}</span></span></button>{role === "ADMIN" && job.status !== "CANCELLED" && <div className="job-card-actions"><button type="button" className="icon-action action-edit" aria-label={`Edit ${job.title}`} title="Edit job" onClick={async (event) => { event.stopPropagation(); const nextTitle = window.prompt("Job title", job.title); if (nextTitle === null) return; const nextInstructions = window.prompt("Instructions", job.instructions || ""); if (nextInstructions === null) return; const nextDue = window.prompt("Due date (YYYY-MM-DD, optional)", job.due_date || ""); if (nextDue === null) return; try { await api(`/api/jobs/${job.id}`, { method: "PUT", body: JSON.stringify({ title: nextTitle, instructions: nextInstructions, dueDate: nextDue || null }) }); await refresh(true); } catch (reason) { setError((reason as Error).message); } }}><Pencil aria-hidden="true" /></button><button type="button" className="icon-action action-danger" aria-label={`Cancel ${job.title}`} title="Cancel job" onClick={async (event) => { event.stopPropagation(); const reason = window.prompt(`Reason for cancelling ${job.title}:`); if (!reason?.trim() || !window.confirm(`Cancel job ${job.title}?`)) return; try { await api(`/api/jobs/${job.id}/cancel`, { method: "POST", body: JSON.stringify({ reason }) }); await refresh(true); if (openJob?.id === job.id) setOpenJob(null); } catch (reason) { setError((reason as Error).message); } }}><Trash2 aria-hidden="true" /></button></div>}</article>)}</div>
+    {openJob && <div className="quote-dialog-backdrop" onClick={() => setOpenJob(null)}><section className="quote-dialog job-detail-dialog" role="dialog" aria-modal="true" aria-label={openJob.title} onClick={(event) => event.stopPropagation()}><button type="button" className="dialog-close" aria-label="Close job" onClick={() => setOpenJob(null)}><X aria-hidden="true" /></button><h2>{openJob.title}</h2><p><MapPin aria-hidden="true" /> {openJob.location_query}</p>{openJob.instructions && <p className="preserve-lines">{openJob.instructions}</p>}{openJob.due_date && <p><strong>Due:</strong> {openJob.due_date}</p>}{openJob.status === "CANCELLED" && <p className="error">Cancelled: {openJob.cancellation_reason}</p>}<div className="job-checklist">{openJob.items?.map((item) => <label key={item.id} className={item.visited_at ? "visited" : ""}><input type="checkbox" checked={Boolean(item.visited_at)} disabled={role !== "REP" || openJob.status === "CANCELLED" || busyItem === item.id} onChange={(event) => void toggleVisit(item, event.target.checked)} /><span>{item.visited_at ? <CheckCircle2 aria-hidden="true" /> : <Circle aria-hidden="true" />}</span><span><strong>{item.buyer_name}</strong><small className="preserve-lines">{item.buyer_address}</small>{item.visited_at && <small>Visited {formatOrderDateTime(item.visited_at)}{item.visited_by_username ? ` by ${item.visited_by_username}` : ""}</small>}</span></label>)}</div></section></div>}
+  </section>;
+}
+function RepHome({ orders, accounts }: { orders: any[]; accounts: any[] }) {
+  const [counts, setCounts] = useState({ all: 0, pending: 0, dispatched: 0 });
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let stale = false;
+    const refreshCounts = () => {
+      if (document.visibilityState === "hidden") return;
+      api<any[]>("/api/quotations?status=all").then((result) => { if (!stale) setCounts({ all: result.length, pending: result.filter((order) => !order.dispatched_at && !order.cancelled_at).length, dispatched: result.filter((order) => order.dispatched_at && !order.cancelled_at).length }); }).catch((reason) => !stale && setError((reason as Error).message));
+    };
+    refreshCounts();
+    const onVisible = () => refreshCounts();
+    const timer = window.setInterval(refreshCounts, 15000);
+    window.addEventListener("focus", onVisible); window.addEventListener("online", onVisible); document.addEventListener("visibilitychange", onVisible);
+    return () => { stale = true; window.clearInterval(timer); window.removeEventListener("focus", onVisible); window.removeEventListener("online", onVisible); document.removeEventListener("visibilitychange", onVisible); };
+  }, [orders]);
+  return <><section className="rep-home"><div className="section-heading"><h1 className="page-title"><BriefcaseBusiness aria-hidden="true" /> Home</h1></div><div className="rep-summary-grid"><button type="button" className="rep-summary all-summary" onClick={() => window.dispatchEvent(new CustomEvent("rsk-open-orders", { detail: "all" }))}><span>My orders</span><strong>{counts.all}</strong></button><button type="button" className="rep-summary pending-summary" onClick={() => window.dispatchEvent(new CustomEvent("rsk-open-orders", { detail: "pending" }))}><span>Pending orders</span><strong>{counts.pending}</strong></button><button type="button" className="rep-summary dispatched-summary" onClick={() => window.dispatchEvent(new CustomEvent("rsk-open-orders", { detail: "dispatched" }))}><span>Dispatched orders</span><strong>{counts.dispatched}</strong></button></div>{error && <p className="error">{error}</p>}</section><JobsPanel role="REP" accounts={accounts} home /></>;
+}
 function App() {
   const [ok, setOk] = useState(false),
+    [sessionLoading, setSessionLoading] = useState(true),
     [role, setRole] = useState<"ADMIN" | "REP" | "STOREKEEPER">("REP"),
     [username, setUsername] = useState(""),
     [accounts, setAccounts] = useState<any[]>([]),
@@ -846,13 +1032,20 @@ function App() {
     [dispatchDetail, setDispatchDetail] = useState<any | null>(null),
     [dispatchNotes, setDispatchNotes] = useState(""),
     [deliveryReference, setDeliveryReference] = useState(""),
-    [dispatchBusy, setDispatchBusy] = useState(false);
+    [dispatchBusy, setDispatchBusy] = useState(false),
+    [notificationOpen, setNotificationOpen] = useState(false),
+    [notifications, setNotifications] = useState<any[]>([]),
+    [unreadNotifications, setUnreadNotifications] = useState(0),
+    [notificationsNext, setNotificationsNext] = useState<number | null>(null),
+    [notificationError, setNotificationError] = useState(""),
+    [foregroundNotification, setForegroundNotification] = useState<any | null>(null);
   const dialogTrigger = useRef<HTMLElement | null>(null);
   const lastFocusedField = useRef<HTMLElement | null>(null);
   const refreshInFlight = useRef(false);
   const refreshSequence = useRef(0);
   const historyRequestSequence = useRef(0);
   const productRequestSequence = useRef(0);
+  const newestNotificationId = useRef<number | null>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const refreshBuyers = () => api<Buyer[]>("/api/buyers").then((buyers) => {
     setBs(buyers);
@@ -875,7 +1068,8 @@ function App() {
         csrf = s.csrfToken;
         setRole(s.role);
         setUsername(s.username);
-        setPage(s.role === "STOREKEEPER" ? "dashboard" : "quote");
+        const target = new URLSearchParams(location.search).get("notification");
+        setPage(target === "order" ? "history" : target === "job" ? (s.role === "ADMIN" ? "jobs" : "home") : s.role === "STOREKEEPER" ? "dashboard" : s.role === "REP" ? "home" : "quote");
         setOk(true);
         if (s.role === "STOREKEEPER") return Promise.resolve([[] as Buyer[], [] as Product[], null as Settings | null] as [Buyer[], Product[], Settings | null]);
         return Promise.all([
@@ -889,14 +1083,31 @@ function App() {
         setPs(y);
         setPdfHeader(settings);
       })
-      .catch(() => setOk(false));
+      .catch(() => setOk(false))
+      .finally(() => setSessionLoading(false));
   }, []);
   useEffect(() => {
-    if (!import.meta.env.PROD || !("serviceWorker" in navigator)) return;
-    void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    // HTTPS development tunnels need a worker too; plain local Vite remains unaffected.
+    if (!("serviceWorker" in navigator) || (!import.meta.env.PROD && !window.isSecureContext)) return;
+    void navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => undefined);
   }, []);
   const refreshAccounts = () => role === "ADMIN" && api<any[]>("/api/accounts").then(setAccounts).catch((error) => setAccountError((error as Error).message));
   useEffect(() => { if (ok && role === "ADMIN") refreshAccounts(); }, [ok, role]);
+  const refreshNotifications = async (before?: number) => {
+    try { const result = await api<any>(`/api/notifications?limit=20${before ? `&before=${before}` : ""}`); const newest = result.notifications[0]; if (!before && newest && newestNotificationId.current !== null && newest.id > newestNotificationId.current && document.visibilityState === "visible") setForegroundNotification(newest); if (!before && newest) newestNotificationId.current = Math.max(newestNotificationId.current || 0, newest.id); setNotifications((current) => before ? [...current, ...result.notifications] : result.notifications); setUnreadNotifications(result.unread); setNotificationsNext(result.nextBefore); setNotificationError(""); } catch (reason) { setNotificationError((reason as Error).message); }
+  };
+  useEffect(() => { if (!ok) return; void refreshNotifications(); const refresh = () => { if (document.visibilityState === "visible") void refreshNotifications(); }; const timer = window.setInterval(refresh, 15000); window.addEventListener("focus", refresh); window.addEventListener("online", refresh); return () => { window.clearInterval(timer); window.removeEventListener("focus", refresh); window.removeEventListener("online", refresh); }; }, [ok]);
+  useEffect(() => { const badging = navigator as Navigator & { setAppBadge?: (count?: number) => Promise<void>; clearAppBadge?: () => Promise<void> }; if (!ok || !badging.setAppBadge || !badging.clearAppBadge) return; void (unreadNotifications > 0 ? badging.setAppBadge(unreadNotifications) : badging.clearAppBadge()).catch(() => undefined); }, [ok, unreadNotifications]);
+  useEffect(() => { if (!ok || !("serviceWorker" in navigator)) return; const message = (event: MessageEvent) => { if (event.data?.type === "RSK_FOREGROUND_NOTIFICATION") { setForegroundNotification(event.data.notification); void refreshNotifications(); } }; navigator.serviceWorker.addEventListener("message", message); return () => navigator.serviceWorker.removeEventListener("message", message); }, [ok]);
+  useEffect(() => {
+    const openOrders = (event: Event) => {
+      const status = (event as CustomEvent<"all" | "pending" | "dispatched">).detail;
+      setOrderStatus(status || "all");
+      setPage("history");
+    };
+    window.addEventListener("rsk-open-orders", openOrders);
+    return () => window.removeEventListener("rsk-open-orders", openOrders);
+  }, []);
   useEffect(() => {
     if (!ok) return;
     let stale = false;
@@ -1081,6 +1292,7 @@ function App() {
     document.addEventListener("focusin", keepVisible);
     return () => document.removeEventListener("focusin", keepVisible);
   }, []);
+  if (sessionLoading) return <main className="login-page"><section className="login-card" aria-live="polite"><h1>RSK Holdings</h1><p>Restoring your secure session…</p></section></main>;
   if (!ok) return <Login />;
   const unavailableItems = its.filter((item) => !ps.some((product) => product.id === item.p.id && product.active));
   const total = its.reduce((n, i) => n + i.unitPriceMinor * i.q, 0);
@@ -1181,11 +1393,12 @@ function App() {
           <b>RSK Holdings</b>
           <span title={username}>{username}</span>
         </div>
+        <button className="header-action notification-bell" onClick={() => { setNotificationOpen((open) => !open); if (!notificationOpen) void refreshNotifications(); }} aria-label={`Notifications${unreadNotifications ? `, ${unreadNotifications} unread` : ""}`}><Bell />{unreadNotifications > 0 && <span className="notification-count">{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}</button>
         <button className="header-action" onClick={() => navigate("account")} aria-label="Settings"><SettingsIcon /></button>
         <button
           onClick={() =>
             (!buyerFormDirty || window.confirm("Discard unsaved buyer changes and log out?")) &&
-            api("/api/logout", { method: "POST" }).then(() => location.reload())
+            (async () => { try { const registration = await navigator.serviceWorker?.getRegistration(); const subscription = await registration?.pushManager.getSubscription(); if (subscription) await api("/api/push/subscriptions", { method: "DELETE", body: JSON.stringify({ endpoint: subscription.endpoint }) }); await (navigator as Navigator & { clearAppBadge?: () => Promise<void> }).clearAppBadge?.(); } catch { /* Logout must still succeed when Push is unavailable. */ } await api("/api/logout", { method: "POST" }); location.reload(); })()
           }
           className="header-action"
           aria-label="Log out">
@@ -1194,6 +1407,8 @@ function App() {
       </header>
       <main className="app-main">
         {syncNotice && <p className="sync-notice" role="status">{syncNotice}</p>}
+        {foregroundNotification && <aside className="foreground-notice" role="status"><span>{foregroundNotification.message || "You have a new update."}</span><button type="button" onClick={() => { const notification = foregroundNotification; setForegroundNotification(null); if (notification.target_type === "order") setPage("history"); else if (notification.target_type === "job") setPage(role === "ADMIN" ? "jobs" : "home"); }} aria-label="Open notification">Open</button><button type="button" onClick={() => setForegroundNotification(null)} aria-label="Dismiss notification"><X aria-hidden="true" /></button></aside>}
+        {page === "home" && role === "REP" && <RepHome orders={history} accounts={accounts} />}
         {page === "quote" && role !== "STOREKEEPER" && (
           <section className="quote-page">
             <h1 className="page-title"><FileText aria-hidden="true" /> New Order</h1>
@@ -1248,17 +1463,21 @@ function App() {
             {history.map((h) => (
               <article className={`history-card order-history-card${h.hidden_at ? " order-hidden" : ""}${h.cancelled_at ? " order-cancelled" : h.dispatched_at ? " order-dispatched" : " order-pending"}`} key={h.id}>
                 <button type="button" className="order-card-open" onClick={(event) => openOrder(h.id, event.currentTarget)} aria-label={`Open order for ${h.buyer_name}`}>
-                  <span>
-                    <strong>{h.buyer_name}</strong>
+                  <span className="order-card-content">
+                    <span className="order-card-heading">
+                      <strong>{h.buyer_name}</strong>
+                    </span>
                     {role === "STOREKEEPER" && <small>{h.buyer_address || "No address"}</small>}
-                    <small className="order-card-date">{formatOrderDateTime(h.created_at)}</small>
                     {h.dispatched_at && h.dispatcher_username && <small>Dispatched by {h.dispatcher_username}</small>}
                     {role === "STOREKEEPER" && h.creator_username && <small>Created by {h.creator_username}</small>}
                     {role === "ADMIN" && h.creator_username && <small>Created by {h.creator_username}</small>}
                     {role === "ADMIN" && h.hidden_at && <span className="status-badge status-hidden">Hidden</span>}
                     {role !== "STOREKEEPER" && <span className={`status-badge ${h.cancelled_at ? "status-danger" : h.dispatched_at ? "status-active" : "status-pending"}`}>{h.cancelled_at ? "Cancelled" : h.dispatched_at ? "Dispatched" : "Pending"}</span>}
                   </span>
-                  {role === "STOREKEEPER" ? <span className={`status-badge ${h.cancelled_at ? "status-danger" : h.dispatched_at ? "status-active" : "status-pending"}`}>{h.cancelled_at ? "Cancelled" : h.dispatched_at ? "Dispatched" : "Pending"}</span> : <b>{fmt(h.total_minor)}</b>}
+                  <span className="order-card-summary">
+                    <small className="order-card-date">{formatOrderDateTime(h.created_at)}</small>
+                    {role === "STOREKEEPER" ? <span className={`status-badge ${h.cancelled_at ? "status-danger" : h.dispatched_at ? "status-active" : "status-pending"}`}>{h.cancelled_at ? "Cancelled" : h.dispatched_at ? "Dispatched" : "Pending"}</span> : <b>{fmt(h.total_minor)}</b>}
+                  </span>
                   <ChevronRight aria-hidden="true" />
                 </button>
                 {role === "ADMIN" && <div className="order-card-actions">
@@ -1299,6 +1518,7 @@ function App() {
             ))}</div>}
           </section>
         )}
+        {page === "jobs" && role === "ADMIN" && <JobsPanel role="ADMIN" accounts={accounts} />}
         {page === "buyers" && (
           <section className="list-page">
             <div className="section-heading"><h1 className="page-title"><Users aria-hidden="true" /> Buyers</h1><button type="button" className="add-row" onClick={() => setBuyerForm(null)}><Plus aria-hidden="true" /> Add buyer</button></div>
@@ -1338,6 +1558,7 @@ function App() {
               <label>New password<input type="password" minLength={1} maxLength={256} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} /></label>
               <div className="form-footer form-footer-right"><button className="primary account-submit">Update password</button></div>
             </form>}
+            {accountSection === "profile" && <PhoneNotificationControls />}
             {role === "ADMIN" && <>
               {accountSection === "pdf" && pdfHeader && <form className="inline-form" onSubmit={async (event) => { event.preventDefault(); setAccountError(""); setAccountNotice(""); setPdfHeaderBusy(true); try { const savedHeader = await api<Settings>("/api/settings/pdf-header", { method: "PUT", body: JSON.stringify({ shop_name: pdfHeader.shop_name, address: pdfHeader.address, phone: pdfHeader.phone, document_title: pdfHeader.pdf_document_title }) }); setPdfHeader(savedHeader); setAccountNotice("PDF header saved. It will be used for new orders; existing saved orders keep their header."); } catch (error) { setAccountError((error as Error).message); } finally { setPdfHeaderBusy(false); } }}>
                 <h2>PDF Header</h2>
@@ -1403,12 +1624,20 @@ function App() {
           </div>
         )}
       </main>
+      {notificationOpen && <div className="quote-dialog-backdrop notification-backdrop" onClick={() => setNotificationOpen(false)}><section className="quote-dialog notification-panel" role="dialog" aria-modal="true" aria-label="Notifications" onClick={(event) => event.stopPropagation()}><button type="button" className="dialog-close" aria-label="Close notifications" onClick={() => setNotificationOpen(false)}><X aria-hidden="true" /></button><div className="section-heading"><h2>Notifications</h2><button type="button" className="mark-all-read" disabled={!unreadNotifications} onClick={async () => { await api("/api/notifications/read-all", { method: "PUT" }); await refreshNotifications(); }}><CheckCheck aria-hidden="true" /> Mark all read</button></div>{notificationError && <p className="error">{notificationError}</p>}{!notifications.length && <p className="empty-state">No notifications yet.</p>}<div className="notification-list">{notifications.map((notification) => <button type="button" key={notification.id} className={`notification-row${notification.read_at ? "" : " unread"}`} onClick={async () => { await api(`/api/notifications/${notification.id}/read`, { method: "PUT" }); setNotifications((current) => current.map((item) => item.id === notification.id ? { ...item, read_at: new Date().toISOString() } : item)); setUnreadNotifications((count) => notification.read_at ? count : Math.max(0, count - 1)); setNotificationOpen(false); if (notification.target_type === "order") setPage("history"); else if (notification.target_type === "job") setPage(role === "ADMIN" ? "jobs" : "home"); }}><Bell aria-hidden="true" /><span><strong>{notification.message}</strong><small>{formatOrderDateTime(notification.created_at)}</small></span></button>)}</div>{notificationsNext && <button type="button" className="add-row" onClick={() => void refreshNotifications(notificationsNext)}>Load older</button>}</section></div>}
       <nav className="bottom-nav">
         {(role === "STOREKEEPER" ? [
           ["dashboard", "Dashboard", History],
           ["history", "Orders", History],
           ["account", "Account", SettingsIcon],
+        ] : role === "ADMIN" ? [
+          ["quote", "New Order", FileText],
+          ["history", "Orders", History],
+          ["products", "Products", Package],
+          ["buyers", "Buyers", Users],
+          ["jobs", "Jobs", BriefcaseBusiness],
         ] : [
+          ["home", "Home", BriefcaseBusiness],
           ["quote", "New Order", FileText],
           ["history", "Orders", History],
           ["products", "Products", Package],
@@ -1453,13 +1682,17 @@ function Login() {
             setE("");
             setLoading(true);
             try {
+              const controller = new AbortController();
+              const timer = window.setTimeout(() => controller.abort(), 15000);
               await api("/api/login", {
                 method: "POST",
                 body: JSON.stringify({ username: u, password: p }),
+                signal: controller.signal,
               });
+              window.clearTimeout(timer);
               location.reload();
             } catch (x) {
-              setE((x as Error).message);
+              setE((x as Error).name === "AbortError" ? "Login is taking too long. Check the local Worker connection and try again." : (x as Error).message);
             } finally {
               setLoading(false);
             }

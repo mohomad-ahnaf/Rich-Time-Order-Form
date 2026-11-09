@@ -1,0 +1,17 @@
+name = "rsk-notification-isolated-normal"
+main = "../../src/worker.ts"
+compatibility_date = "2025-01-29"
+assets = { directory = "../../dist", binding = "ASSETS", not_found_handling = "single-page-application" }
+
+[vars]
+OWNER_USERNAME = "TestBootstrapUnused"
+OWNER_PASSWORD_HASH = "test-only-unused-hash"
+SESSION_SECRET = "test-only-session-secret-not-for-production"
+VAPID_PUBLIC_KEY = "test-only-public-key"
+VAPID_PRIVATE_KEY = "test-only-private-key"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "notification-isolated-normal-db"
+database_id = "notification-isolated-normal-db"
+migrations_dir = "../../migrations"

@@ -3,6 +3,11 @@ main = "src/worker.ts"
 compatibility_date = "2025-01-29"
 assets = { directory = "dist", binding = "ASSETS", not_found_handling = "single-page-application" }
 
+# Local configuration only. A deployed Worker must have this trigger applied by
+# Wrangler/Cloudflare before background retries can run without app activity.
+[triggers]
+crons = ["*/5 * * * *"]
+
 [[d1_databases]]
 binding = "DB"
 database_name = "rich-time-db"

@@ -2,3 +2,8 @@
 OWNER_USERNAME=Admin
 OWNER_PASSWORD_HASH=replace_with_pbkdf2_hash
 SESSION_SECRET=replace_with_a_long_random_secret
+# Use a real monitored contact URI; never use localhost for provider delivery.
+VAPID_SUBJECT=mailto:notifications@example.com
+# Keep these private values only in ignored .dev.vars or Worker secrets.
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=

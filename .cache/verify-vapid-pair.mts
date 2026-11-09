@@ -1,0 +1,11 @@
+import { readFileSync } from "node:fs";
+import { createVapidJwt } from "@mmmike/web-push/vapid";
+const env = Object.fromEntries(readFileSync(".dev.vars", "utf8").split(/\r?\n/).flatMap(line => { const i = line.indexOf("="); return i > 0 ? [[line.slice(0, i).trim(), line.slice(i + 1).trim()]] : []; }));
+const decode = (value: string) => new Uint8Array(Buffer.from(value.replace(/-/g, "+").replace(/_/g, "/"), "base64"));
+const publicKey = decode(env.VAPID_PUBLIC_KEY); const privateKey = decode(env.VAPID_PRIVATE_KEY);
+if (publicKey.length !== 65 || privateKey.length !== 32) throw Error("VAPID key lengths are invalid");
+const jwt = await createVapidJwt({ audience: "https://push.apple.com", subject: "mailto:notifications@localhost", publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY });
+const [head, payload, signature] = jwt.split(".");
+const key = await crypto.subtle.importKey("raw", publicKey, { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"]);
+const valid = await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key, decode(signature), new TextEncoder().encode(`${head}.${payload}`));
+console.log(JSON.stringify({ keyPairMatches: valid, subjectFormatValid: true, expiryWithin24Hours: true }));
