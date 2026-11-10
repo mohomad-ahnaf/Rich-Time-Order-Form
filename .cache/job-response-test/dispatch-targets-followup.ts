@@ -1,0 +1,6 @@
+const base="http://127.0.0.1:8804", password="JobResponseTest!2026"; const ok=(v:unknown,m:string)=>{if(!v)throw Error(m);console.log(`PASS ${m}`)};
+async function login(u:string){const r=await fetch(`${base}/api/login`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({username:u,password})});const cookie=r.headers.get("set-cookie")!.split(";")[0];const s=await fetch(`${base}/api/session`,{headers:{cookie}});return{cookie,csrf:(await s.json() as any).csrfToken}};
+const call=async(s:any,p:string,m="GET",b?:any)=>{const r=await fetch(`${base}${p}`,{method:m,headers:{cookie:s.cookie,"x-csrf-token":s.csrf,...(b===undefined?{}:{"content-type":"application/json"})},body:b===undefined?undefined:JSON.stringify(b)});return{r,b:await r.json().catch(()=>null)}};
+const admin=await login("TestAdmin"), store=await login("Store Target");
+ok((await call(store,"/api/dispatch-targets","PUT",{month:"2026-11",orderTarget:1,valueTargetMinor:100,version:null})).r.status===403,"Storekeeper PUT denied");
+for(const month of ["2026-10","2026-11","2026-12"]){const x=await call(admin,`/api/dispatch-targets?month=${month}`);console.log(`METRIC ${month} ${x.b.actual.orders} ${x.b.actual.valueMinor}`)}

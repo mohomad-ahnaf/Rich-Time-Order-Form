@@ -12,8 +12,10 @@
     "db:migrate:local": "wrangler d1 migrations apply rich-time-db --local --persist-to .wrangler/state",
     "db:migrate:remote": "wrangler d1 migrations apply rich-time-db --remote",
     "db:reset:local": "tsx scripts/reset-local-rsk-catalog.ts --confirm",
+    "db:replace:buyers:local": "tsx scripts/replace-local-buyers.ts --confirm",
     "password:hash": "tsx scripts/hash-password.ts",
     "setup:credentials": "powershell -ExecutionPolicy Bypass -File scripts/setup-local-credentials.ps1",
+    "account:create:developer": "powershell -ExecutionPolicy Bypass -File scripts/create-local-developer-admin.ps1",
     "seed:local": "tsx scripts/seed-local.ts",
     "verify:local-api": "tsx scripts/verify-local-api.ts",
     "verify:pdf": "tsx scripts/verify-pdf-layout.ts"

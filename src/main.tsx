@@ -24,6 +24,7 @@ import {
   Circle,
   Bell,
   CheckCheck,
+  Gauge,
 } from "lucide-react";
 import type { Buyer, Product, Quotation, Settings } from "./types";
 import { orderFilename, orderReference } from "./order-reference";
@@ -85,7 +86,7 @@ async function api<T>(u: string, o: RequestInit = {}): Promise<T> {
 }
 type InstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 type JobItem = { id: number; buyer_id: number | null; buyer_name: string; buyer_address: string; visited_at: string | null; visited_by_username: string | null; version: number };
-type Job = { id: number; title: string; location_query: string; instructions?: string | null; due_date?: string | null; assigned_rep_user_id: number | null; assigned_rep_username: string; status: "ACTIVE" | "COMPLETED" | "CANCELLED"; version: number; cancelled_at?: string | null; cancellation_reason?: string | null; created_at: string; visited_count?: number; item_count?: number; progress?: { visited: number; total: number }; items?: JobItem[] };
+type Job = { id: number; title: string; location_query: string; instructions?: string | null; due_date?: string | null; assigned_rep_user_id: number | null; assigned_rep_username: string; status: "ACTIVE" | "COMPLETED" | "CANCELLED"; response_status: "AWAITING_RESPONSE" | "ACCEPTED" | "REJECTED"; responded_at?: string | null; responded_by_username?: string | null; rejection_reason?: string | null; version: number; cancelled_at?: string | null; cancellation_reason?: string | null; created_at: string; visited_count?: number; item_count?: number; progress?: { visited: number; total: number }; items?: JobItem[] };
 function OrderDocumentPreview({ q, header }: { q: Quotation; header?: Settings | null }) {
   const headerName = q.shop_name?.trim() || header?.shop_name || "RSK Holdings";
   const headerAddress = q.shop_address?.trim() || header?.address || "";
@@ -442,8 +443,8 @@ function BuyerForm({
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
-    if (!form.full_name.trim() || !form.phone.trim() || !form.address.trim()) {
-      setError("Name, phone, and address are required.");
+    if (!form.full_name.trim() || !form.address.trim()) {
+      setError("Name and address are required.");
       return;
     }
     setBusy(true);
@@ -462,7 +463,7 @@ function BuyerForm({
   return (
     <form className="inline-form" onSubmit={save}>
       <label>Name<input required value={form.full_name} onChange={(event) => setForm({ ...form, full_name: event.target.value })} /></label>
-      <label>Phone<input required inputMode="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
+      <label>Phone (optional)<input inputMode="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
       <label>Email (optional)<input type="email" value={form.email || ""} onChange={(event) => setForm({ ...form, email: event.target.value })} /></label>
       <label>Address<textarea required value={form.address || ""} onChange={(event) => setForm({ ...form, address: event.target.value })} /></label>
       {error && <p className="error">{error}</p>}
@@ -515,7 +516,6 @@ async function readyServiceWorker(stage: (message: string) => void) {
 function PhoneNotificationControls() {
   const [status, setStatus] = useState<"loading" | "enabled" | "disabled" | "unsupported" | "denied" | "unavailable">("loading");
   const [message, setMessage] = useState(""); const [stage, setStage] = useState("");
-  const [displayDiagnostic, setDisplayDiagnostic] = useState("");
   const [busy, setBusy] = useState(false);
   const supported = typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
   const update = async () => {
@@ -556,20 +556,8 @@ function PhoneNotificationControls() {
     } catch (error) { setMessage((error as Error).message || "Phone notifications could not be disabled."); }
     finally { setBusy(false); }
   };
-  const sendTest = async () => {
-    setBusy(true); setMessage(""); setStage("Sending a real test notification…");
-    try { const registration = await readyServiceWorker(setStage); const subscription = await registration.pushManager.getSubscription(); if (!subscription) throw Error("This device has no active browser subscription. Disable and enable notifications again."); const appKey = subscription.options.applicationServerKey; if (!appKey) throw Error("This device subscription has no application key. Disable and enable notifications again."); const serverKey = btoa(String.fromCharCode(...new Uint8Array(appKey))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, ""); const result = await api<{ status: string; detail: string }>("/api/push/test", { method: "POST", body: JSON.stringify({ endpoint: subscription.endpoint, applicationServerKey: serverKey }) }); setMessage(result.detail); }
-    catch (error) { setMessage((error as Error).message || "Test notification failed."); }
-    finally { setStage(""); setBusy(false); }
-  };
-  const testDisplay = async () => {
-    setBusy(true); setMessage(""); setStage("Requesting a local system notification…");
-    try { const registration = await readyServiceWorker(setStage); await withTimeout(registration.showNotification("RSK Holdings", { body: "Local display test — no push provider was contacted.", icon: "/icon-192.png", tag: `rsk-local-display-${Date.now()}` }), "Local notification display", 10000); setDisplayDiagnostic("Local showNotification resolved."); }
-    catch (error) { setDisplayDiagnostic((error as Error).message || "Local notification display failed."); }
-    finally { setStage(""); setBusy(false); }
-  };
   const ios = /iPad|iPhone|iPod/.test(navigator.userAgent); const installed = Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-  return <section className="phone-notification-controls" aria-live="polite"><h2>Phone notifications</h2>{ios && !installed && <p>On iPhone, use Safari Share → Add to Home Screen, then open the installed app to enable notifications.</p>}{status === "loading" && <p>Checking this device…</p>}{status === "unsupported" && <p>Your browser does not support phone notifications.</p>}{status === "unavailable" && <p>Phone notifications require HTTPS (or localhost during development).</p>}{status === "denied" && <p>Notifications are blocked. Allow them in this browser’s site settings to enable this device.</p>}{status === "enabled" && <p>Enabled for this device.</p>}{status === "disabled" && <p>Disabled for this device.</p>}{stage && <p>{stage}</p>}{message && <p className={status === "enabled" ? "success" : "error"}>{message}</p>}{displayDiagnostic && <p>{displayDiagnostic}</p>}{status === "enabled" ? <><button type="button" className="action-neutral" disabled={busy} onClick={() => void disable()}>{busy ? "Disabling…" : "Disable phone notifications"}</button><button type="button" className="primary account-submit" disabled={busy} onClick={() => void testDisplay()}>Test notification display</button><button type="button" className="primary account-submit" disabled={busy} onClick={() => void sendTest()}>Send test notification</button></> : <button type="button" className="primary account-submit" disabled={busy || status === "unsupported" || status === "unavailable" || status === "denied" || (ios && !installed)} onClick={() => void enable()}>{busy ? stage || "Enabling…" : message ? "Retry phone notifications" : "Enable phone notifications"}</button>}</section>;
+  return <section className="phone-notification-controls" aria-live="polite"><h2>Phone notifications</h2>{ios && !installed && <p>On iPhone, use Safari Share → Add to Home Screen, then open the installed app to enable notifications.</p>}{status === "loading" && <p>Checking this device…</p>}{status === "unsupported" && <p>Your browser does not support phone notifications.</p>}{status === "unavailable" && <p>Phone notifications require HTTPS (or localhost during development).</p>}{status === "denied" && <p>Notifications are blocked. Allow them in this browser’s site settings to enable this device.</p>}{status === "enabled" && <p>Enabled for this device.</p>}{status === "disabled" && <p>Disabled for this device.</p>}{stage && <p>{stage}</p>}{message && <p className={status === "enabled" ? "success" : "error"}>{message}</p>}{status === "enabled" ? <button type="button" className="action-neutral" disabled={busy} onClick={() => void disable()}>{busy ? "Disabling…" : "Disable phone notifications"}</button> : <button type="button" className="primary account-submit" disabled={busy || status === "unsupported" || status === "unavailable" || status === "denied" || (ios && !installed)} onClick={() => void enable()}>{busy ? stage || "Enabling…" : message ? "Retry phone notifications" : "Enable phone notifications"}</button>}</section>;
 }
 function BuyerPicker({ buyers, selected, select, add }: { buyers: Buyer[]; selected: any; select: (b: Buyer | null) => void; add: () => void }) {
   const [query, setQuery] = useState("");
@@ -612,7 +600,7 @@ function BuyerPicker({ buyers, selected, select, add }: { buyers: Buyer[]; selec
       {open && <div className="picker-popover"><button type="button" className="add-row buyer-add-row" onClick={add}><Plus aria-hidden="true" /> Add new buyer</button><div className="picker-results">{matches.map((buyer) => <button type="button" key={buyer.id} onClick={() => { select(buyer); close(); setQuery(""); }}><strong>{buyer.full_name}</strong><small>{buyer.address || "No address"}</small></button>)}{!matches.length && <p>No buyers found</p>}</div></div>}
     </div>
   );
-  return <div className="picker" ref={root}><label>Buyer<input ref={input} aria-label="Search or select buyer" placeholder="Search or select buyer" value={selected ? `${selected.full_name} · ${selected.phone}` : query} onFocus={() => { setOpen(true); if (selected) select(null); }} onChange={e => { setQuery(e.target.value); setOpen(true); }}/></label>{open && <div className="picker-popover"><button type="button" className="add-row buyer-add-row" onClick={add}><Plus aria-hidden="true" /> Add new buyer</button><div className="picker-results">{matches.map(b => <button type="button" key={b.id} onClick={() => { select(b); close(); setQuery(""); }}><strong>{b.full_name}</strong><small>{b.phone}</small></button>)}{!matches.length && <p>No buyers found</p>}</div></div>}</div>;
+  return <div className="picker" ref={root}><label>Buyer<input ref={input} aria-label="Search or select buyer" placeholder="Search or select buyer" value={selected ? [selected.full_name, selected.address, selected.phone].filter(Boolean).join(" · ") : query} onFocus={() => { setOpen(true); if (selected) select(null); }} onChange={e => { setQuery(e.target.value); setOpen(true); }}/></label>{open && <div className="picker-popover"><button type="button" className="add-row buyer-add-row" onClick={add}><Plus aria-hidden="true" /> Add new buyer</button><div className="picker-results">{matches.map(b => <button type="button" key={b.id} onClick={() => { select(b); close(); setQuery(""); }}><strong>{b.full_name}</strong>{b.address && <small>{b.address}</small>}{b.phone && <small>{b.phone}</small>}</button>)}{!matches.length && <p>No buyers found</p>}</div></div>}</div>;
 }
 type DraftItem = { p: Product; q: number; unitPriceMinor: number };
 
@@ -878,22 +866,33 @@ function ItemsTable({
 }
 function JobsPanel({ role, accounts, home = false }: { role: "ADMIN" | "REP"; accounts: any[]; home?: boolean }) {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [filter, setFilter] = useState<"all" | "active" | "completed" | "cancelled">("all");
+  const [filter, setFilter] = useState<"all" | "active" | "completed" | "cancelled" | "rejected">("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [openJob, setOpenJob] = useState<Job | null>(null);
   const [busyItem, setBusyItem] = useState<number | null>(null);
+  const [responseBusy, setResponseBusy] = useState(false);
+  const [rejectingJob, setRejectingJob] = useState<Job | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
   const [repId, setRepId] = useState("");
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [instructions, setInstructions] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [candidates, setCandidates] = useState<Array<Pick<Buyer, "id" | "full_name" | "address">>>([]);
+  const [candidatesLoading, setCandidatesLoading] = useState(false);
+  const [addressSuggestions, setAddressSuggestions] = useState<string[]>([]);
+  const [addressOpen, setAddressOpen] = useState(false);
+  const [addressLoading, setAddressLoading] = useState(false);
+  const [addressHighlight, setAddressHighlight] = useState(-1);
   const [selectedBuyerIds, setSelectedBuyerIds] = useState<number[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [assignmentKey, setAssignmentKey] = useState(() => crypto.randomUUID());
   const [assignmentOpen, setAssignmentOpen] = useState(false);
   const request = useRef(0);
+  const addressPicker = useRef<HTMLDivElement | null>(null);
+  const addressInput = useRef<HTMLInputElement | null>(null);
+  const selectAllMatches = useRef<HTMLInputElement | null>(null);
   const refresh = async (quiet = false) => {
     const current = ++request.current;
     if (!quiet) setLoading(true);
@@ -914,13 +913,44 @@ function JobsPanel({ role, accounts, home = false }: { role: "ADMIN" | "REP"; ac
   useEffect(() => {
     if (role !== "ADMIN") return;
     let stale = false;
+    const query = location.trim();
+    setSelectedBuyerIds([]);
+    setCandidates([]);
+    if (!query) { setCandidatesLoading(false); return; }
+    setCandidatesLoading(true);
     const timer = window.setTimeout(() => {
-      api<Array<Pick<Buyer, "id" | "full_name" | "address">>>(`/api/jobs/buyer-preview?q=${encodeURIComponent(location)}`)
+      api<Array<Pick<Buyer, "id" | "full_name" | "address">>>(`/api/jobs/buyer-preview?q=${encodeURIComponent(query)}`)
         .then((rows) => { if (!stale) setCandidates(rows); })
-        .catch((reason) => { if (!stale) setError((reason as Error).message); });
+        .catch((reason) => { if (!stale) setError((reason as Error).message); })
+        .finally(() => { if (!stale) setCandidatesLoading(false); });
     }, 250);
     return () => { stale = true; window.clearTimeout(timer); };
   }, [role, location]);
+  useEffect(() => {
+    if (role !== "ADMIN") return;
+    let stale = false;
+    const query = location.trim();
+    if (!addressOpen || !query) { setAddressSuggestions([]); setAddressLoading(false); return; }
+    setAddressLoading(true);
+    const timer = window.setTimeout(() => {
+      api<Array<{ address: string }>>(`/api/jobs/address-suggestions?q=${encodeURIComponent(query)}`)
+        .then((rows) => { if (!stale) { setAddressSuggestions(rows.map((row) => row.address)); setAddressHighlight(-1); } })
+        .catch((reason) => { if (!stale) setError((reason as Error).message); })
+        .finally(() => { if (!stale) setAddressLoading(false); });
+    }, 200);
+    return () => { stale = true; window.clearTimeout(timer); };
+  }, [role, location, addressOpen]);
+  useEffect(() => {
+    if (!addressOpen) return;
+    const close = (event: PointerEvent) => { if (!addressPicker.current?.contains(event.target as Node)) setAddressOpen(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") { setAddressOpen(false); addressInput.current?.focus(); } };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", escape); };
+  }, [addressOpen]);
+  useEffect(() => {
+    if (selectAllMatches.current) selectAllMatches.current.indeterminate = selectedBuyerIds.some((id) => candidates.some((buyer) => buyer.id === id)) && !candidates.every((buyer) => selectedBuyerIds.includes(buyer.id));
+  }, [candidates, selectedBuyerIds]);
   const showJob = async (id: number) => {
     try { setOpenJob(await api<Job>(`/api/jobs/${id}`)); setError(""); }
     catch (reason) { setError((reason as Error).message); }
@@ -936,6 +966,24 @@ function JobsPanel({ role, accounts, home = false }: { role: "ADMIN" | "REP"; ac
     } catch (reason) { setOpenJob(previous); setError((reason as Error).message); }
     finally { setBusyItem(null); }
   };
+  const respondToJob = async (job: Job, response: "ACCEPT" | "REJECT", reason?: string) => {
+    if (responseBusy) return;
+    setResponseBusy(true);
+    setError("");
+    try {
+      const updated = await api<Job>(`/api/jobs/${job.id}/response`, { method: "POST", body: JSON.stringify({ response, reason }) });
+      setOpenJob(updated);
+      setRejectingJob(null);
+      setRejectionReason("");
+      await refresh(true);
+    } catch (cause) {
+      setError((cause as Error).message);
+    } finally {
+      setResponseBusy(false);
+    }
+  };
+  const responseLabel = (job: Job) => job.response_status === "AWAITING_RESPONSE" ? "Awaiting response" : job.response_status === "ACCEPTED" ? "Accepted" : "Rejected";
+  const responseClass = (job: Job) => job.response_status === "ACCEPTED" ? "status-active" : job.response_status === "REJECTED" ? "status-danger" : "status-pending";
   const createJob = async () => {
     if (!repId || !title.trim() || !location.trim() || !selectedBuyerIds.length) { setError("Select an active Rep, enter a title and address search, then select at least one buyer."); return; }
     setSubmitting(true); setError("");
@@ -945,6 +993,15 @@ function JobsPanel({ role, accounts, home = false }: { role: "ADMIN" | "REP"; ac
     } catch (reason) { setError((reason as Error).message); }
     finally { setSubmitting(false); }
   };
+  const matchingSelectedCount = candidates.filter((buyer) => selectedBuyerIds.includes(buyer.id)).length;
+  const allMatchingSelected = candidates.length > 0 && matchingSelectedCount === candidates.length;
+  const chooseAddress = (address: string) => {
+    setLocation(address);
+    setAddressOpen(false);
+    setAddressSuggestions([]);
+    window.setTimeout(() => addressInput.current?.focus(), 0);
+  };
+  const toggleAllMatching = () => setSelectedBuyerIds((current) => allMatchingSelected ? current.filter((id) => !candidates.some((buyer) => buyer.id === id)) : [...new Set([...current, ...candidates.map((buyer) => buyer.id)])]);
   const activeReps = accounts.filter((account) => account.role === "REP" && account.active);
   return <section className={home ? "jobs-panel jobs-panel-home" : "jobs-panel"}>
     <div className="section-heading"><h1 className="page-title"><BriefcaseBusiness aria-hidden="true" /> {home ? "My Jobs" : "Jobs"}</h1>{role === "ADMIN" && <button type="button" className="add-row" onClick={() => setAssignmentOpen(true)}><Plus aria-hidden="true" /> Assign job</button>}</div>
@@ -953,18 +1010,52 @@ function JobsPanel({ role, accounts, home = false }: { role: "ADMIN" | "REP"; ac
       <h2>Assign a job</h2>
       <label>Rep<select value={repId} onChange={(event) => setRepId(event.target.value)}><option value="">Select active Rep</option>{activeReps.map((rep) => <option key={rep.id} value={rep.id}>{rep.username}</option>)}</select></label>
       <label>Job title<input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={200} /></label>
-      <label>Address/location search<input placeholder="For example: Kandy" value={location} onChange={(event) => setLocation(event.target.value)} maxLength={200} /></label>
+      <div className="job-address-picker" ref={addressPicker}>
+        <label>Address/location search
+          <input ref={addressInput} placeholder="Search an active buyer address" value={location} maxLength={200} autoComplete="off" aria-autocomplete="list" aria-expanded={addressOpen} aria-controls="job-address-suggestions" onFocus={() => setAddressOpen(true)} onChange={(event) => { setLocation(event.target.value); setAddressOpen(true); }} onKeyDown={(event) => {
+            if (event.key === "ArrowDown" && addressSuggestions.length) { event.preventDefault(); setAddressHighlight((current) => Math.min(current + 1, addressSuggestions.length - 1)); }
+            if (event.key === "ArrowUp" && addressSuggestions.length) { event.preventDefault(); setAddressHighlight((current) => Math.max(current - 1, 0)); }
+            if (event.key === "Enter" && addressHighlight >= 0 && addressSuggestions[addressHighlight]) { event.preventDefault(); chooseAddress(addressSuggestions[addressHighlight]); }
+            if (event.key === "Escape") setAddressOpen(false);
+          }} />
+        </label>
+        {addressOpen && location.trim() && <div id="job-address-suggestions" className="job-address-suggestions" role="listbox" aria-label="Matching addresses">
+          {addressLoading && <p>Searching addresses…</p>}
+          {!addressLoading && addressSuggestions.map((address, index) => <button type="button" key={address} role="option" aria-selected={addressHighlight === index} className={addressHighlight === index ? "active" : ""} onMouseDown={(event) => event.preventDefault()} onClick={() => chooseAddress(address)}>{address}</button>)}
+          {!addressLoading && !addressSuggestions.length && <p>No matching addresses.</p>}
+        </div>}
+      </div>
       <label>Instructions (optional)<textarea value={instructions} onChange={(event) => setInstructions(event.target.value)} maxLength={2000} /></label>
       <label>Due date (optional)<input type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /></label>
-      <div className="job-buyer-preview"><strong>Matching active buyers</strong>{candidates.length ? candidates.map((buyer) => <label key={buyer.id} className="job-buyer-choice"><input type="checkbox" checked={selectedBuyerIds.includes(buyer.id)} onChange={() => setSelectedBuyerIds((current) => current.includes(buyer.id) ? current.filter((id) => id !== buyer.id) : [...current, buyer.id])} /><span><b>{buyer.full_name}</b><small className="preserve-lines">{buyer.address}</small></span></label>) : <p>Search an address to preview buyers.</p>}</div>
+      <div className="job-buyer-preview">
+        <div className="job-buyer-preview-heading"><strong>Matching active buyers</strong><small>{matchingSelectedCount} of {candidates.length} selected</small></div>
+        <label className="job-buyer-choice job-select-all"><input ref={selectAllMatches} type="checkbox" disabled={candidatesLoading || !candidates.length} checked={allMatchingSelected} onChange={toggleAllMatching} /><span><b>All matching buyers ({candidates.length})</b><small>Select or clear every buyer matching this address.</small></span></label>
+        {candidatesLoading ? <p>Loading matching buyers…</p> : candidates.length ? candidates.map((buyer) => <label key={buyer.id} className="job-buyer-choice"><input type="checkbox" checked={selectedBuyerIds.includes(buyer.id)} onChange={() => setSelectedBuyerIds((current) => current.includes(buyer.id) ? current.filter((id) => id !== buyer.id) : [...current, buyer.id])} /><span><b>{buyer.full_name}</b><small className="preserve-lines">{buyer.address}</small></span></label>) : <p>{location.trim() ? "No active buyers match this address." : "Search an address to preview buyers."}</p>}
+      </div>
       <div className="form-footer form-footer-right"><button type="button" onClick={() => setAssignmentOpen(false)}>Cancel</button><button type="button" className="primary" disabled={submitting || !selectedBuyerIds.length} onClick={createJob}>{submitting ? "Assigning…" : `Assign job${selectedBuyerIds.length ? ` (${selectedBuyerIds.length})` : ""}`}</button></div>
     </section></div>}
-    {role === "REP" && <div className="account-tabs job-tabs" aria-label="My jobs filter"><button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>All</button><button className={filter === "active" ? "active" : ""} onClick={() => setFilter("active")}>Active</button><button className={filter === "completed" ? "active" : ""} onClick={() => setFilter("completed")}>Completed</button></div>}
-    {role === "ADMIN" && <div className="account-tabs job-tabs" aria-label="Jobs filter"><button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>All</button><button className={filter === "active" ? "active" : ""} onClick={() => setFilter("active")}>Active</button><button className={filter === "completed" ? "active" : ""} onClick={() => setFilter("completed")}>Completed</button><button className={filter === "cancelled" ? "active" : ""} onClick={() => setFilter("cancelled")}>Cancelled</button></div>}
+    <div className="account-tabs dispatch-tabs job-tabs" aria-label={role === "REP" ? "My jobs filter" : "Jobs filter"}><button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>All</button><button className={filter === "active" ? "active" : ""} onClick={() => setFilter("active")}>Active</button><button className={filter === "completed" ? "active" : ""} onClick={() => setFilter("completed")}>Completed</button><button className={filter === "cancelled" ? "active" : ""} onClick={() => setFilter("cancelled")}>Cancelled</button><button className={filter === "rejected" ? "active" : ""} onClick={() => setFilter("rejected")}>Rejected</button></div>
     {error && <p className="error">{error}</p>}{loading && <p>Loading jobs…</p>}{!loading && !jobs.length && <p className="empty-state">{role === "REP" ? "No jobs are assigned to you." : "No jobs found."}</p>}
-    <div className="job-list">{jobs.map((job) => <article className={`job-card job-${job.status.toLowerCase()}`} key={job.id}><button type="button" className="job-card-open" onClick={() => void showJob(job.id)}><span><strong>{job.title}</strong><small><MapPin aria-hidden="true" /> {job.location_query}</small><small>{role === "ADMIN" ? `Rep: ${job.assigned_rep_username}` : job.due_date ? `Due ${job.due_date}` : "No due date"}</small></span><span className="job-progress"><b>{job.visited_count ?? job.progress?.visited ?? 0} of {job.item_count ?? job.progress?.total ?? 0}</b><small>shops visited</small><span className={`status-badge ${job.status === "COMPLETED" ? "status-active" : job.status === "CANCELLED" ? "status-danger" : "status-pending"}`}>{job.status[0] + job.status.slice(1).toLowerCase()}</span></span></button>{role === "ADMIN" && job.status !== "CANCELLED" && <div className="job-card-actions"><button type="button" className="icon-action action-edit" aria-label={`Edit ${job.title}`} title="Edit job" onClick={async (event) => { event.stopPropagation(); const nextTitle = window.prompt("Job title", job.title); if (nextTitle === null) return; const nextInstructions = window.prompt("Instructions", job.instructions || ""); if (nextInstructions === null) return; const nextDue = window.prompt("Due date (YYYY-MM-DD, optional)", job.due_date || ""); if (nextDue === null) return; try { await api(`/api/jobs/${job.id}`, { method: "PUT", body: JSON.stringify({ title: nextTitle, instructions: nextInstructions, dueDate: nextDue || null }) }); await refresh(true); } catch (reason) { setError((reason as Error).message); } }}><Pencil aria-hidden="true" /></button><button type="button" className="icon-action action-danger" aria-label={`Cancel ${job.title}`} title="Cancel job" onClick={async (event) => { event.stopPropagation(); const reason = window.prompt(`Reason for cancelling ${job.title}:`); if (!reason?.trim() || !window.confirm(`Cancel job ${job.title}?`)) return; try { await api(`/api/jobs/${job.id}/cancel`, { method: "POST", body: JSON.stringify({ reason }) }); await refresh(true); if (openJob?.id === job.id) setOpenJob(null); } catch (reason) { setError((reason as Error).message); } }}><Trash2 aria-hidden="true" /></button></div>}</article>)}</div>
-    {openJob && <div className="quote-dialog-backdrop" onClick={() => setOpenJob(null)}><section className="quote-dialog job-detail-dialog" role="dialog" aria-modal="true" aria-label={openJob.title} onClick={(event) => event.stopPropagation()}><button type="button" className="dialog-close" aria-label="Close job" onClick={() => setOpenJob(null)}><X aria-hidden="true" /></button><h2>{openJob.title}</h2><p><MapPin aria-hidden="true" /> {openJob.location_query}</p>{openJob.instructions && <p className="preserve-lines">{openJob.instructions}</p>}{openJob.due_date && <p><strong>Due:</strong> {openJob.due_date}</p>}{openJob.status === "CANCELLED" && <p className="error">Cancelled: {openJob.cancellation_reason}</p>}<div className="job-checklist">{openJob.items?.map((item) => <label key={item.id} className={item.visited_at ? "visited" : ""}><input type="checkbox" checked={Boolean(item.visited_at)} disabled={role !== "REP" || openJob.status === "CANCELLED" || busyItem === item.id} onChange={(event) => void toggleVisit(item, event.target.checked)} /><span>{item.visited_at ? <CheckCircle2 aria-hidden="true" /> : <Circle aria-hidden="true" />}</span><span><strong>{item.buyer_name}</strong><small className="preserve-lines">{item.buyer_address}</small>{item.visited_at && <small>Visited {formatOrderDateTime(item.visited_at)}{item.visited_by_username ? ` by ${item.visited_by_username}` : ""}</small>}</span></label>)}</div></section></div>}
+    <div className="job-list">{jobs.map((job) => <article className={`job-card job-${job.status.toLowerCase()}`} key={job.id}><button type="button" className="job-card-open" onClick={() => void showJob(job.id)}><span><strong>{job.title}</strong><small className="job-location"><MapPin aria-hidden="true" /><span>{job.location_query}</span></small><small>{role === "ADMIN" ? `Rep: ${job.assigned_rep_username}` : job.due_date ? `Due ${job.due_date}` : "No due date"}</small></span><span className="job-progress"><b>{job.visited_count ?? job.progress?.visited ?? 0} of {job.item_count ?? job.progress?.total ?? 0}</b><small>shops visited</small><span className={`status-badge ${responseClass(job)}`}>{responseLabel(job)}</span><span className={`status-badge ${job.status === "COMPLETED" ? "status-active" : job.status === "CANCELLED" ? "status-danger" : "status-pending"}`}>{job.status[0] + job.status.slice(1).toLowerCase()}</span></span></button>{role === "ADMIN" && job.status !== "CANCELLED" && <div className="job-card-actions"><button type="button" className="icon-action action-edit" aria-label={`Edit ${job.title}`} title="Edit job" onClick={async (event) => { event.stopPropagation(); const nextTitle = window.prompt("Job title", job.title); if (nextTitle === null) return; const nextInstructions = window.prompt("Instructions", job.instructions || ""); if (nextInstructions === null) return; const nextDue = window.prompt("Due date (YYYY-MM-DD, optional)", job.due_date || ""); if (nextDue === null) return; try { await api(`/api/jobs/${job.id}`, { method: "PUT", body: JSON.stringify({ title: nextTitle, instructions: nextInstructions, dueDate: nextDue || null }) }); await refresh(true); } catch (reason) { setError((reason as Error).message); } }}><Pencil aria-hidden="true" /></button><button type="button" className="icon-action action-danger" aria-label={`Cancel ${job.title}`} title="Cancel job" onClick={async (event) => { event.stopPropagation(); const reason = window.prompt(`Reason for cancelling ${job.title}:`); if (!reason?.trim() || !window.confirm(`Cancel job ${job.title}?`)) return; try { await api(`/api/jobs/${job.id}/cancel`, { method: "POST", body: JSON.stringify({ reason }) }); await refresh(true); if (openJob?.id === job.id) setOpenJob(null); } catch (reason) { setError((reason as Error).message); } }}><Trash2 aria-hidden="true" /></button></div>}</article>)}</div>
+    {openJob && <div className="quote-dialog-backdrop" onClick={() => setOpenJob(null)}><section className="quote-dialog job-detail-dialog" role="dialog" aria-modal="true" aria-label={openJob.title} onClick={(event) => event.stopPropagation()}><button type="button" className="dialog-close" aria-label="Close job" onClick={() => setOpenJob(null)}><X aria-hidden="true" /></button><h2>{openJob.title}</h2><p><MapPin aria-hidden="true" /> {openJob.location_query}</p>{openJob.instructions && <p className="preserve-lines">{openJob.instructions}</p>}{openJob.due_date && <p><strong>Due:</strong> {openJob.due_date}</p>}<p><strong>Rep response:</strong> <span className={`status-badge ${responseClass(openJob)}`}>{responseLabel(openJob)}</span></p>{openJob.responded_at && <p><strong>Responded:</strong> {formatOrderDateTime(openJob.responded_at)}{openJob.responded_by_username ? ` by ${openJob.responded_by_username}` : ""}</p>}{openJob.response_status === "REJECTED" && <p className="error"><strong>Reason:</strong> {openJob.rejection_reason}</p>}{openJob.status === "CANCELLED" && <p className="error">Cancelled: {openJob.cancellation_reason}</p>}{role === "REP" && openJob.status !== "CANCELLED" && openJob.response_status === "AWAITING_RESPONSE" && <div className="job-response-actions"><button type="button" className="primary" disabled={responseBusy} onClick={() => void respondToJob(openJob, "ACCEPT")}>{responseBusy ? "Saving…" : "Accept"}</button><button type="button" className="danger-button" disabled={responseBusy} onClick={() => { setRejectingJob(openJob); setRejectionReason(""); }}>Reject</button></div>}{role === "REP" && openJob.response_status !== "ACCEPTED" && openJob.status !== "CANCELLED" && <p className="helper-text">Accept this job before updating visit progress.</p>}<div className="job-checklist">{openJob.items?.map((item) => <label key={item.id} className={item.visited_at ? "visited" : ""}><input type="checkbox" checked={Boolean(item.visited_at)} disabled={role !== "REP" || openJob.status === "CANCELLED" || openJob.response_status !== "ACCEPTED" || busyItem === item.id} onChange={(event) => void toggleVisit(item, event.target.checked)} /><span>{item.visited_at ? <CheckCircle2 aria-hidden="true" /> : <Circle aria-hidden="true" />}</span><span><strong>{item.buyer_name}</strong><small className="preserve-lines">{item.buyer_address}</small>{item.visited_at && <small>Visited {formatOrderDateTime(item.visited_at)}{item.visited_by_username ? ` by ${item.visited_by_username}` : ""}</small>}</span></label>)}</div></section></div>}
+    {rejectingJob && <div className="quote-dialog-backdrop" onClick={() => !responseBusy && setRejectingJob(null)}><section className="quote-dialog job-response-dialog" role="dialog" aria-modal="true" aria-label={`Reject ${rejectingJob.title}`} onClick={(event) => event.stopPropagation()}><button type="button" className="dialog-close" aria-label="Close rejection form" disabled={responseBusy} onClick={() => setRejectingJob(null)}><X aria-hidden="true" /></button><h2>Reject job</h2><p>{rejectingJob.title}</p><label>Reason<textarea autoFocus value={rejectionReason} maxLength={1000} onChange={(event) => setRejectionReason(event.target.value)} placeholder="Why can this job not be accepted?" /></label><div className="form-footer"><button type="button" disabled={responseBusy} onClick={() => setRejectingJob(null)}>Cancel</button><button type="button" className="danger-button" disabled={responseBusy || !rejectionReason.trim()} onClick={() => void respondToJob(rejectingJob, "REJECT", rejectionReason)}>{responseBusy ? "Saving…" : "Reject job"}</button></div></section></div>}
   </section>;
+}
+type DispatchTargetData = { month: string; actual: { orders: number; valueMinor: number }; target: { order_target: number; value_target_minor: number; version: number; updated_by_username: string; updated_at: string } | null; refreshedAt: string };
+function DispatchTargetsDialog({ close }: { close: () => void }) {
+  const [month, setMonth] = useState(() => new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Colombo", year: "numeric", month: "2-digit" }).formatToParts(new Date()).reduce((value, part) => part.type === "year" ? { ...value, year: part.value } : part.type === "month" ? { ...value, month: part.value } : value, {} as Record<string, string>));
+  const monthKey = `${month.year}-${month.month}`;
+  const [data, setData] = useState<DispatchTargetData | null>(null), [error, setError] = useState(""), [loading, setLoading] = useState(true), [editing, setEditing] = useState(false), [orders, setOrders] = useState(""), [value, setValue] = useState(""), [saving, setSaving] = useState(false);
+  const request = useRef(0);
+  const refresh = async (quiet = false) => { const sequence = ++request.current; if (!quiet) setLoading(true); try { const result = await api<DispatchTargetData>(`/api/dispatch-targets?month=${monthKey}`); if (sequence === request.current) { setData(result); setError(""); if (!editing) { setOrders(result.target ? String(result.target.order_target) : ""); setValue(result.target ? (result.target.value_target_minor / 100).toFixed(2) : ""); } } } catch (reason) { if (sequence === request.current) setError((reason as Error).message); } finally { if (sequence === request.current && !quiet) setLoading(false); } };
+  useEffect(() => { void refresh(); }, [monthKey]);
+  useEffect(() => { const update = () => document.visibilityState === "visible" && void refresh(true); const timer = window.setInterval(update, 15000); window.addEventListener("focus", update); window.addEventListener("online", update); return () => { window.clearInterval(timer); window.removeEventListener("focus", update); window.removeEventListener("online", update); }; }, [monthKey, editing]);
+  useEffect(() => { const escape = (event: KeyboardEvent) => event.key === "Escape" && close(); window.addEventListener("keydown", escape); return () => window.removeEventListener("keydown", escape); }, [close]);
+  const changeMonth = (delta: number) => { const [year, monthNumber] = monthKey.split("-").map(Number); const next = new Date(Date.UTC(year, monthNumber - 1 + delta, 1)); setMonth({ year: String(next.getUTCFullYear()), month: String(next.getUTCMonth() + 1).padStart(2, "0") }); setEditing(false); };
+  const meter = (label: string, actual: number, target: number | undefined, suffix: string) => { if (!target) return <article className="target-meter"><strong>{label}</strong><p>Targets not set</p></article>; const percent = actual / target * 100, visual = Math.min(percent, 100), tone = percent < 50 ? "danger" : percent < 80 ? "amber" : percent < 100 ? "blue" : "success", remaining = target - actual; return <article className={`target-meter ${tone}`}><strong>{label}</strong><div className="target-ring" style={{ "--progress": `${visual}%` } as any}><b>{percent.toFixed(0)}%</b></div><b>{suffix}</b><small>{remaining >= 0 ? `${remaining} remaining` : `${Math.abs(remaining)} exceeded`}</small></article>; };
+  const save = async () => { const orderTarget = Number(orders), valueTargetMinor = Math.round(Number(value) * 100); if (!Number.isInteger(orderTarget) || orderTarget < 1 || !/^\d+(?:\.\d{1,2})?$/.test(value) || valueTargetMinor < 1) { setError("Enter a positive whole order target and a positive LKR value with up to two decimals."); return; } setSaving(true); try { await api("/api/dispatch-targets", { method: "PUT", body: JSON.stringify({ month: monthKey, orderTarget, valueTargetMinor, version: data?.target?.version ?? null }) }); setEditing(false); await refresh(true); } catch (reason) { setError((reason as Error).message); } finally { setSaving(false); } };
+  const title = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Colombo", month: "long", year: "numeric" }).format(new Date(`${monthKey}-01T00:00:00Z`));
+  return <div className="quote-dialog-backdrop" onClick={close}><section className="quote-dialog dispatch-target-dialog" role="dialog" aria-modal="true" aria-label="Dispatch targets" onClick={(event) => event.stopPropagation()}><button className="dialog-close" onClick={close} aria-label="Close dispatch targets"><X /></button><div className="section-heading"><h2><Gauge /> Dispatch targets</h2><button className="icon-action" aria-label="Set targets" title="Set targets" onClick={() => setEditing(true)}><Pencil /></button></div><div className="target-period"><button onClick={() => changeMonth(-1)} aria-label="Previous month">‹</button><strong>{title}</strong><button onClick={() => changeMonth(1)} aria-label="Next month">›</button></div>{error && <p className="error">{error}</p>}{loading && !data ? <p>Loading targets…</p> : <><div className="target-meters">{meter("Current dispatched orders", data?.actual.orders || 0, data?.target?.order_target, `${data?.actual.orders || 0} / ${data?.target?.order_target || "—"} orders`)}{meter("Dispatched order value", data?.actual.valueMinor || 0, data?.target?.value_target_minor, `${fmt(data?.actual.valueMinor || 0)} / ${data?.target ? fmt(data.target.value_target_minor) : "—"}`)}</div>{data?.target && <small>Updated by {data.target.updated_by_username} · {formatOrderDateTime(data.target.updated_at)}</small>}{editing && <div className="target-form"><label>Target dispatched orders<input inputMode="numeric" value={orders} onChange={(event) => setOrders(event.target.value)} /></label><label>Target dispatched value (LKR)<input inputMode="decimal" value={value} onChange={(event) => setValue(event.target.value)} /></label><div className="form-footer"><button onClick={() => setEditing(false)} disabled={saving}>Cancel</button><button className="primary" onClick={() => void save()} disabled={saving}>{saving ? "Saving…" : "Save targets"}</button></div></div>}{!data?.target && !editing && <button className="primary" onClick={() => setEditing(true)}>Set targets</button>}</>}</section></div>;
 }
 function RepHome({ orders, accounts }: { orders: any[]; accounts: any[] }) {
   const [counts, setCounts] = useState({ all: 0, pending: 0, dispatched: 0 });
@@ -1053,6 +1144,7 @@ function App() {
     [notificationsNext, setNotificationsNext] = useState<number | null>(null),
     [notificationError, setNotificationError] = useState(""),
     [foregroundNotification, setForegroundNotification] = useState<any | null>(null);
+  const [dispatchTargetsOpen, setDispatchTargetsOpen] = useState(false);
   const dialogTrigger = useRef<HTMLElement | null>(null);
   const lastFocusedField = useRef<HTMLElement | null>(null);
   const refreshInFlight = useRef(false);
@@ -1098,7 +1190,8 @@ function App() {
         setRole(s.role);
         setUsername(s.username);
         const target = new URLSearchParams(location.search).get("notification");
-        setPage(target === "order" ? "history" : target === "job" ? (s.role === "ADMIN" ? "jobs" : "home") : s.role === "STOREKEEPER" ? "dashboard" : s.role === "REP" ? "home" : "quote");
+        if (target === "order-pending") setOrderStatus("pending");
+        setPage(target === "order" || target === "order-pending" ? "history" : target === "job" ? (s.role === "ADMIN" ? "jobs" : "home") : s.role === "STOREKEEPER" ? "dashboard" : s.role === "REP" ? "home" : "quote");
         let initialDataTimer: number | undefined;
         try {
           const initialData = s.role === "STOREKEEPER"
@@ -1301,6 +1394,8 @@ function App() {
     const viewportHeight = () => viewport?.height || window.innerHeight;
     let largestHeight = viewportHeight();
     const update = () => {
+      document.documentElement.style.setProperty("--visual-viewport-height", `${Math.round(viewportHeight())}px`);
+      document.documentElement.style.setProperty("--visual-viewport-offset-top", `${Math.round(viewport?.offsetTop || 0)}px`);
       const focused = document.activeElement instanceof HTMLInputElement ||
         document.activeElement instanceof HTMLTextAreaElement ||
         document.activeElement instanceof HTMLSelectElement;
@@ -1311,7 +1406,9 @@ function App() {
     const orientationChange = () => {
       largestHeight = viewportHeight();
       setKeyboardOpen(false);
+      window.setTimeout(update, 0);
     };
+    update();
     viewport?.addEventListener("resize", update);
     viewport?.addEventListener("scroll", update);
     window.addEventListener("resize", update);
@@ -1321,6 +1418,8 @@ function App() {
       viewport?.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
       window.removeEventListener("orientationchange", orientationChange);
+      document.documentElement.style.removeProperty("--visual-viewport-height");
+      document.documentElement.style.removeProperty("--visual-viewport-offset-top");
     };
   }, []);
   useEffect(() => {
@@ -1448,12 +1547,13 @@ function App() {
           <img className="brand-wordmark" src="/rsk-holdings-wordmark.png" alt="RSK Holdings (PVT) LTD" />
           <span title={username}>{username}</span>
         </div>
+        {role === "ADMIN" && <button className="header-action" onClick={() => setDispatchTargetsOpen(true)} aria-label="Dispatch targets"><Gauge /></button>}
         <button className="header-action notification-bell" onClick={() => { setNotificationOpen((open) => !open); if (!notificationOpen) void refreshNotifications(); }} aria-label={`Notifications${unreadNotifications ? `, ${unreadNotifications} unread` : ""}`}><Bell />{unreadNotifications > 0 && <span className="notification-count">{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}</button>
         <button className="header-action" onClick={() => navigate("account")} aria-label="Settings"><SettingsIcon /></button>
       </header>
       <main className="app-main">
         {syncNotice && <p className="sync-notice" role="status">{syncNotice}</p>}
-        {foregroundNotification && <aside className="foreground-notice" role="status"><span>{foregroundNotification.message || "You have a new update."}</span><button type="button" onClick={() => { const notification = foregroundNotification; setForegroundNotification(null); if (notification.target_type === "order") setPage("history"); else if (notification.target_type === "job") setPage(role === "ADMIN" ? "jobs" : "home"); }} aria-label="Open notification">Open</button><button type="button" onClick={() => setForegroundNotification(null)} aria-label="Dismiss notification"><X aria-hidden="true" /></button></aside>}
+        {foregroundNotification && <aside className="foreground-notice" role="status"><span>{foregroundNotification.message || "You have a new update."}</span><button type="button" onClick={() => { const notification = foregroundNotification; setForegroundNotification(null); if (notification.target_type === "order" || notification.target_type === "order-pending") { if (notification.target_type === "order-pending") setOrderStatus("pending"); setPage("history"); } else if (notification.target_type === "job") setPage(role === "ADMIN" ? "jobs" : "home"); }} aria-label="Open notification">Open</button><button type="button" onClick={() => setForegroundNotification(null)} aria-label="Dismiss notification"><X aria-hidden="true" /></button></aside>}
         {page === "home" && role === "REP" && <RepHome orders={history} accounts={accounts} />}
         {page === "quote" && role !== "STOREKEEPER" && (
           <section className="quote-page">
@@ -1551,7 +1651,7 @@ function App() {
             {productForm === undefined && <div className="product-card-list">{productResults.map((p) => (
               <article className="product-card" key={p.id}>
                 <div className="product-card-heading">
-                  <div><h2>{productName(p)}</h2><small>{p.sku}</small></div>
+                  <div><h2>{productName(p)}</h2></div>
                   <span className={`status-badge ${p.active ? "status-active" : "status-hidden"}`}>{p.active ? "Active" : "Hidden"}</span>
                 </div>
                 <strong className="product-card-price">{fmt(p.price_minor)}</strong>
@@ -1674,7 +1774,8 @@ function App() {
           </div>
         )}
       </main>
-      {notificationOpen && <div className="quote-dialog-backdrop notification-backdrop" onClick={() => setNotificationOpen(false)}><section className="quote-dialog notification-panel" role="dialog" aria-modal="true" aria-label="Notifications" onClick={(event) => event.stopPropagation()}><button type="button" className="dialog-close" aria-label="Close notifications" onClick={() => setNotificationOpen(false)}><X aria-hidden="true" /></button><div className="section-heading"><h2>Notifications</h2><button type="button" className="mark-all-read" disabled={!unreadNotifications} onClick={async () => { await api("/api/notifications/read-all", { method: "PUT" }); await refreshNotifications(); }}><CheckCheck aria-hidden="true" /> Mark all read</button></div>{notificationError && <p className="error">{notificationError}</p>}{!notifications.length && <p className="empty-state">No notifications yet.</p>}<div className="notification-list">{notifications.map((notification) => <button type="button" key={notification.id} className={`notification-row${notification.read_at ? "" : " unread"}`} onClick={async () => { await api(`/api/notifications/${notification.id}/read`, { method: "PUT" }); setNotifications((current) => current.map((item) => item.id === notification.id ? { ...item, read_at: new Date().toISOString() } : item)); setUnreadNotifications((count) => notification.read_at ? count : Math.max(0, count - 1)); setNotificationOpen(false); if (notification.target_type === "order") setPage("history"); else if (notification.target_type === "job") setPage(role === "ADMIN" ? "jobs" : "home"); }}><Bell aria-hidden="true" /><span><strong>{notification.message}</strong><small>{formatOrderDateTime(notification.created_at)}</small></span></button>)}</div>{notificationsNext && <button type="button" className="add-row" onClick={() => void refreshNotifications(notificationsNext)}>Load older</button>}</section></div>}
+      {notificationOpen && <div className="quote-dialog-backdrop notification-backdrop" onClick={() => setNotificationOpen(false)}><section className="quote-dialog notification-panel" role="dialog" aria-modal="true" aria-label="Notifications" onClick={(event) => event.stopPropagation()}><button type="button" className="dialog-close" aria-label="Close notifications" onClick={() => setNotificationOpen(false)}><X aria-hidden="true" /></button><div className="section-heading"><h2>Notifications</h2><button type="button" className="mark-all-read" disabled={!unreadNotifications} onClick={async () => { await api("/api/notifications/read-all", { method: "PUT" }); await refreshNotifications(); }}><CheckCheck aria-hidden="true" /> Mark all read</button></div>{notificationError && <p className="error">{notificationError}</p>}{!notifications.length && <p className="empty-state">No notifications yet.</p>}<div className="notification-list">{notifications.map((notification) => <button type="button" key={notification.id} className={`notification-row${notification.read_at ? "" : " unread"}`} onClick={async () => { await api(`/api/notifications/${notification.id}/read`, { method: "PUT" }); setNotifications((current) => current.map((item) => item.id === notification.id ? { ...item, read_at: new Date().toISOString() } : item)); setUnreadNotifications((count) => notification.read_at ? count : Math.max(0, count - 1)); setNotificationOpen(false); if (notification.target_type === "order" || notification.target_type === "order-pending") { if (notification.target_type === "order-pending") setOrderStatus("pending"); setPage("history"); } else if (notification.target_type === "job") setPage(role === "ADMIN" ? "jobs" : "home"); }}><Bell aria-hidden="true" /><span><strong>{notification.message}</strong><small>{formatOrderDateTime(notification.created_at)}</small></span></button>)}</div>{notificationsNext && <button type="button" className="add-row" onClick={() => void refreshNotifications(notificationsNext)}>Load older</button>}</section></div>}
+      {dispatchTargetsOpen && role === "ADMIN" && <DispatchTargetsDialog close={() => setDispatchTargetsOpen(false)} />}
       <nav className="bottom-nav">
         {(role === "STOREKEEPER" ? [
           ["dashboard", "Dashboard", History],

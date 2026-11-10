@@ -6,7 +6,7 @@ assets = { directory = "dist", binding = "ASSETS", not_found_handling = "single-
 # Local configuration only. A deployed Worker must have this trigger applied by
 # Wrangler/Cloudflare before background retries can run without app activity.
 [triggers]
-crons = ["*/5 * * * *"]
+crons = ["*/5 * * * *", "0 4 * * *"]
 
 [[d1_databases]]
 binding = "DB"

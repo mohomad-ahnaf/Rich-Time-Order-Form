@@ -2,6 +2,7 @@ node_modules/
 dist/
 .wrangler/
 .local-backups/
+buyers.csv
 .dev.vars
 .dev.vars.*
 .certs/

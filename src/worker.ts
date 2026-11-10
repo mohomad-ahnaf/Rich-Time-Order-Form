@@ -91,16 +91,19 @@ const disableUserSubscriptions = (db: D1Database, userId: number) => db.prepare(
 app.get("/api/session", c => json({ userId: c.get("user").id, username: c.get("user").username, role: c.get("user").role, csrfToken: c.get("csrf") }));
 app.post("/api/logout", async (c) => { await c.env.DB.prepare("UPDATE user_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE id=?").bind(c.get("sessionId")).run(); return new Response(null, { status: 204, headers: { "Set-Cookie": sessionCookie(c.req.raw, "", 0) } }); });
 type NotificationRecipient = { id: number; username: string };
-async function notify(db: D1Database, recipients: NotificationRecipient[], actorId: number, eventKey: string, type: string, message: string, targetType?: "order" | "job", targetId?: number) {
+async function notify(db: D1Database, recipients: NotificationRecipient[], actorId: number, eventKey: string, type: string, message: string, targetType?: "order" | "order-pending" | "job", targetId?: number) {
     const safeMessage = message.replace(/[\r\n]+/g, " ").trim().slice(0, 500);
     const unique = [...new Map(recipients.filter((recipient) => recipient.id !== actorId).map((recipient) => [recipient.id, recipient])).values()];
     if (!safeMessage || !unique.length) return;
     await db.batch(unique.map((recipient) => db.prepare("INSERT OR IGNORE INTO notifications(recipient_user_id,type,message,target_type,target_id,event_key) VALUES(?,?,?,?,?,?)").bind(recipient.id, type, safeMessage, targetType || null, targetId || null, eventKey)));
     for (const recipient of unique) { const row = await db.prepare("SELECT id FROM notifications WHERE recipient_user_id=? AND event_key=?").bind(recipient.id, eventKey).first<{ id: number }>(); if (row) { const outbox = await db.prepare("INSERT OR IGNORE INTO notification_outbox(notification_id,next_attempt_at) VALUES(?,CURRENT_TIMESTAMP)").bind(row.id).run(); console.log(`notification ${outbox.meta.changes ? "queued" : "deduplicated"} id=${row.id} type=${type} recipient=${recipient.id}`); } }
 }
+function scheduleEventPush(c: { env: Bindings; executionCtx: ExecutionContext }, eventKey: string, label: string) {
+    c.executionCtx.waitUntil(deliverPushOutbox(c.env, undefined, undefined, eventKey).catch((error) => console.warn(`${label} notification scheduling failed: ${(error as Error).name || "Error"}`)));
+}
 async function deliverPushOutbox(env: Bindings, userId?: number, endpoint?: string, eventKey?: string) {
     const subject = vapidSubject(env); if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY || !subject) return;
-    const due = await env.DB.prepare(`SELECT o.id AS outbox_id,n.id,n.message,n.target_type,n.target_id,n.recipient_user_id,COALESCE(p.private_lock_screen,0) AS private_lock_screen FROM notification_outbox o JOIN notifications n ON n.id=o.notification_id JOIN users u ON u.id=n.recipient_user_id LEFT JOIN notification_preferences p ON p.user_id=n.recipient_user_id WHERE u.active=1 AND u.deleted_at IS NULL AND o.delivered_at IS NULL AND o.failed_at IS NULL AND o.next_attempt_at<=CURRENT_TIMESTAMP AND (o.locked_until IS NULL OR o.locked_until<CURRENT_TIMESTAMP) ${userId ? "AND n.recipient_user_id=?" : ""} ${eventKey ? "AND n.event_key=?" : ""} ORDER BY o.id LIMIT 10`).bind(...(userId ? [userId] : []), ...(eventKey ? [eventKey] : [])).all();
+    const due = await env.DB.prepare(`SELECT o.id AS outbox_id,n.id,n.type,n.message,n.target_type,n.target_id,n.recipient_user_id,COALESCE(p.private_lock_screen,0) AS private_lock_screen FROM notification_outbox o JOIN notifications n ON n.id=o.notification_id JOIN users u ON u.id=n.recipient_user_id LEFT JOIN notification_preferences p ON p.user_id=n.recipient_user_id WHERE u.active=1 AND u.deleted_at IS NULL AND o.delivered_at IS NULL AND o.failed_at IS NULL AND o.next_attempt_at<=CURRENT_TIMESTAMP AND (o.locked_until IS NULL OR o.locked_until<CURRENT_TIMESTAMP) ${userId ? "AND n.recipient_user_id=?" : ""} ${eventKey ? "AND n.event_key=?" : ""} ORDER BY o.id LIMIT 10`).bind(...(userId ? [userId] : []), ...(eventKey ? [eventKey] : [])).all();
     for (const item of due.results as any[]) {
         const claim = crypto.randomUUID();
         const claimed = await env.DB.prepare("UPDATE notification_outbox SET claim_token=?,locked_until=datetime('now','+1 minute'),updated_at=CURRENT_TIMESTAMP WHERE id=? AND delivered_at IS NULL AND failed_at IS NULL AND next_attempt_at<=CURRENT_TIMESTAMP AND (locked_until IS NULL OR locked_until<CURRENT_TIMESTAMP)").bind(claim, item.outbox_id).run();
@@ -115,9 +118,10 @@ async function deliverPushOutbox(env: Bindings, userId?: number, endpoint?: stri
             const calls = (pushTestCalls.get(subscription.endpoint) || 0) + 1;
             if (env.PUSH_TEST_MODE === "1") pushTestCalls.set(subscription.endpoint, calls);
             if (env.PUSH_TEST_MODE === "1" && (subscription.endpoint.includes("push-test-transient") && (!subscription.endpoint.includes("once") || calls === 1))) throw Error("mock transient push failure");
-            const targetPath = item.target_type === "order" ? "/?notification=order" : item.target_type === "job" ? "/?notification=job" : "/";
+            const targetPath = item.target_type === "order-pending" ? "/?notification=order-pending" : item.target_type === "order" ? "/?notification=order" : item.target_type === "job" ? "/?notification=job" : "/";
             const unread = await env.DB.prepare("SELECT COUNT(*) AS count FROM notifications WHERE recipient_user_id=? AND read_at IS NULL").bind(item.recipient_user_id).first<{ count: number }>();
-            const delivered = env.PUSH_TEST_MODE === "1" ? !subscription.endpoint.includes("push-test-expired") : await sendPushNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, { title: "RSK Holdings", body: item.private_lock_screen ? "You have a new update in RSK Holdings." : item.message, url: targetPath, tag: `rsk-notification-${item.id}`, badgeCount: unread?.count || 0 }, { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject });
+            const title = item.type === "DAILY_PENDING_DISPATCH_ADMIN" || item.type === "DAILY_PENDING_DISPATCH_STOREKEEPER" ? "Daily dispatch reminder" : item.type === "DAILY_PENDING_DISPATCH_REP" ? "Daily order update" : "RSK Holdings";
+            const delivered = env.PUSH_TEST_MODE === "1" ? !subscription.endpoint.includes("push-test-expired") : await sendPushNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, { title, body: item.private_lock_screen ? "You have a new update in RSK Holdings." : item.message, url: targetPath, tag: `rsk-notification-${item.id}`, badgeCount: unread?.count || 0 }, { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject });
             if (!delivered) { await env.DB.prepare("UPDATE push_subscriptions SET disabled_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(subscription.id).run(); console.warn(`push delivery expired notification=${item.id} device=${device}`); }
             else console.log(`push provider accepted notification=${item.id} device=${device}`);
         } catch (error) {
@@ -138,6 +142,34 @@ async function activeRecipients(db: D1Database, roles: Role[]) {
     if (!roles.length) return [] as NotificationRecipient[];
     return (await db.prepare(`SELECT id,username FROM users WHERE active=1 AND deleted_at IS NULL AND COALESCE(role_v2,role) IN (${roles.map(() => "?").join(",")})`).bind(...roles).all()).results as NotificationRecipient[];
 }
+const colomboDate = (date = new Date()) => {
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Colombo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+    const value = (type: string) => parts.find((part) => part.type === type)?.value || "";
+    return `${value("year")}-${value("month")}-${value("day")}`;
+};
+const pendingReminderMessage = (role: Role, count: number) => {
+    if (role === "REP") return count === 0 ? "None of your orders are pending dispatch." : `Good morning! ${count} of your order${count === 1 ? " is" : "s are"} pending dispatch.`;
+    return count === 0 ? "No orders are pending dispatch." : `Good morning! ${count} order${count === 1 ? " is" : "s are"} pending dispatch.`;
+};
+async function pendingDispatchCount(db: D1Database, user: NotificationRecipient & { role: Role }) {
+    const shared = "deleted_at IS NULL AND dispatched_at IS NULL AND cancelled_at IS NULL";
+    if (user.role === "ADMIN") return (await db.prepare(`SELECT COUNT(*) AS count FROM quotations WHERE ${shared}`).first<{ count: number }>())?.count || 0;
+    if (user.role === "STOREKEEPER") return (await db.prepare(`SELECT COUNT(*) AS count FROM quotations WHERE ${shared} AND hidden_at IS NULL`).first<{ count: number }>())?.count || 0;
+    return (await db.prepare(`SELECT COUNT(*) AS count FROM quotations WHERE ${shared} AND hidden_at IS NULL AND created_by_user_id=?`).bind(user.id).first<{ count: number }>())?.count || 0;
+}
+async function runDailyPendingDispatchReminder(env: Bindings, now = new Date()) {
+    const date = colomboDate(now);
+    const recipients = (await env.DB.prepare("SELECT id,username,COALESCE(role_v2,role) AS role FROM users WHERE active=1 AND deleted_at IS NULL AND COALESCE(role_v2,role) IN ('ADMIN','REP','STOREKEEPER') ORDER BY id").all()).results as Array<NotificationRecipient & { role: Role }>;
+    for (let index = 0; index < recipients.length; index += 10) {
+        for (const recipient of recipients.slice(index, index + 10)) {
+            const count = await pendingDispatchCount(env.DB, recipient);
+            const eventKey = `daily-pending-dispatch:${date}:${recipient.id}`;
+            const type = recipient.role === "REP" ? "DAILY_PENDING_DISPATCH_REP" : recipient.role === "ADMIN" ? "DAILY_PENDING_DISPATCH_ADMIN" : "DAILY_PENDING_DISPATCH_STOREKEEPER";
+            await notify(env.DB, [recipient], 0, eventKey, type, pendingReminderMessage(recipient.role, count), "order-pending");
+            await deliverPushOutbox(env, undefined, undefined, eventKey);
+        }
+    }
+}
 const notificationId = z.number().int().positive();
 app.get("/api/notifications", async (c) => {
     const limit = Math.min(50, Math.max(1, Number(c.req.query("limit") || 25)));
@@ -156,7 +188,6 @@ app.get("/api/push/public-key", c => c.env.VAPID_PUBLIC_KEY && c.env.VAPID_PRIVA
 const pushSubscriptionSchema = z.object({ endpoint: z.string().url().max(2000), keys: z.object({ p256dh: z.string().min(1).max(500), auth: z.string().min(1).max(500) }) });
 app.post("/api/push/subscriptions", async (c) => { const parsed = pushSubscriptionSchema.safeParse(await c.req.json()); if (!parsed.success || !parsed.data.endpoint.startsWith("https://")) return fail("Invalid push subscription"); const user = c.get("user"); await c.env.DB.prepare("INSERT INTO push_subscriptions(user_id,endpoint,p256dh,auth,disabled_at,updated_at) VALUES(?,?,?,?,NULL,CURRENT_TIMESTAMP) ON CONFLICT(endpoint) DO UPDATE SET user_id=excluded.user_id,p256dh=excluded.p256dh,auth=excluded.auth,disabled_at=NULL,updated_at=CURRENT_TIMESTAMP").bind(user.id, parsed.data.endpoint, parsed.data.keys.p256dh, parsed.data.keys.auth).run(); return json({ ok: true }, 201); });
 app.delete("/api/push/subscriptions", async (c) => { const parsed = z.object({ endpoint: z.string().url().max(2000) }).safeParse(await c.req.json()); if (!parsed.success) return fail("Invalid push subscription"); await c.env.DB.prepare("UPDATE push_subscriptions SET disabled_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE endpoint=? AND user_id=?").bind(parsed.data.endpoint, c.get("user").id).run(); return new Response(null, { status: 204 }); });
-app.post("/api/push/test", async (c) => { if (c.env.PUSH_TEST_MODE === "1") return fail("Test delivery is unavailable in mock mode", 404); if (!c.env.VAPID_PUBLIC_KEY || !c.env.VAPID_PRIVATE_KEY || !vapidSubject(c.env)) return fail("Phone notifications are not configured with a valid contact subject", 503); const parsed = z.object({ endpoint: z.string().url().max(2000), applicationServerKey: z.string().min(1).max(500) }).safeParse(await c.req.json()); if (!parsed.success) return fail("This device subscription is unavailable. Disable and enable notifications again.", 422); if (parsed.data.applicationServerKey !== c.env.VAPID_PUBLIC_KEY) return fail("This device subscription uses a different application key. Disable and enable notifications again.", 422); const user = c.get("user"); const subscription = await c.env.DB.prepare("SELECT id FROM push_subscriptions WHERE user_id=? AND endpoint=? AND disabled_at IS NULL").bind(user.id, parsed.data.endpoint).first(); if (!subscription) return fail("This device is not an active notification subscriber. Disable and enable notifications again.", 422); const eventKey = `push-test:${user.id}:${crypto.randomUUID()}`; await notify(c.env.DB, [{ id: user.id, username: user.username }], -1, eventKey, "PUSH_TEST", "RSK Holdings test notification."); await deliverPushOutbox(c.env, user.id, parsed.data.endpoint); const outbox = await c.env.DB.prepare("SELECT o.delivered_at,o.failed_at,o.attempts FROM notification_outbox o JOIN notifications n ON n.id=o.notification_id WHERE n.recipient_user_id=? AND n.event_key=?").bind(user.id, eventKey).first<any>(); if (outbox?.delivered_at) return json({ status: "provider_accepted", detail: "Queued and accepted by the push provider. This does not confirm phone receipt." }); if (outbox?.failed_at) return json({ status: "failed", detail: "The push provider attempt failed. Check this device subscription and try again." }, 502); return json({ status: "queued", detail: "Queued for retry. The provider has not accepted it yet." }, 202); });
 app.get("/api/test/push-state", async (c) => { if (c.env.PUSH_TEST_MODE !== "1") return fail("Not found", 404); const denied = requireAdmin(c); if (denied) return denied; return json({ calls: Object.fromEntries(pushTestCalls) }); });
 app.post("/api/test/push-reset", async (c) => { if (c.env.PUSH_TEST_MODE !== "1") return fail("Not found", 404); const denied = requireAdmin(c); if (denied) return denied; pushTestCalls.clear(); return json({ ok: true }); });
 const accountSchema = z.object({ username: text.max(100), password, role: z.enum(["REP", "STOREKEEPER"]).default("REP") });
@@ -194,7 +225,7 @@ app.post("/api/account/password", async (c) => { const parsed = z.object({ curre
     return fail("Passwords must contain 1 to 256 characters"); const user = c.get("user"); if (!await verifyPassword(parsed.data.currentPassword, user.password_hash))
     return fail("Current password is incorrect", 403); await c.env.DB.prepare("UPDATE users SET password_hash=?,session_version=session_version+1,updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(await hashPassword(parsed.data.newPassword), user.id).run(); await revokeUserSessions(c.env.DB, user.id); return json({ ok: true }); });
 const buyerAddress = z.string().trim().min(1, "Address is required").max(2000);
-const buyerSchema = z.object({ full_name: text, phone: text.max(40), email: z.string().trim().email().max(200).optional().or(z.literal("")).transform(value => value || null), address: buyerAddress, active: z.number().int().min(0).max(1).optional() });
+const buyerSchema = z.object({ full_name: text, phone: z.string().trim().max(40).optional().or(z.literal("")).transform(value => value || ""), email: z.string().trim().email().max(200).optional().or(z.literal("")).transform(value => value || null), address: buyerAddress, active: z.number().int().min(0).max(1).optional() });
 app.get("/api/buyers", async (c) => { const denied = requireNotStorekeeper(c); if (denied) return denied; const q = (c.req.query("q") || "").trim(); const rows = await c.env.DB.prepare("SELECT * FROM buyers WHERE active=1 AND (LOWER(full_name) LIKE LOWER(?) OR phone LIKE ? OR LOWER(COALESCE(address,'')) LIKE LOWER(?)) ORDER BY full_name").bind(`%${q}%`, `%${q}%`, `%${q}%`).all(); return json(rows.results); });
 app.post("/api/buyers", async (c) => { const denied = requireNotStorekeeper(c); if (denied) return denied; const parsed = buyerSchema.safeParse(await c.req.json()); if (!parsed.success)
     return fail("Invalid buyer details"); const result = await c.env.DB.prepare("INSERT INTO buyers(full_name,phone,email,address,active) VALUES(?,?,?,?,1)").bind(parsed.data.full_name, parsed.data.phone, parsed.data.email, parsed.data.address).run(); return json(await c.env.DB.prepare("SELECT * FROM buyers WHERE id=?").bind(result.meta.last_row_id).first(), 201); });
@@ -256,6 +287,38 @@ app.delete("/api/products/:id", async (c) => { const denied = requireAdmin(c); i
     return json({ ok: true, hidden: true });
 } await c.env.DB.prepare("DELETE FROM products WHERE id=?").bind(id).run(); await notify(c.env.DB, await activeRecipients(c.env.DB, ["REP"]), c.get("user").id, `product:${id}:deleted`, "PRODUCT_DELETED", "A product is no longer available."); return json({ ok: true, deleted: true }); });
 const pdfHeaderSchema = z.object({ shop_name: z.string().trim().min(1).max(120), address: z.string().trim().min(1).max(500), phone: z.string().trim().min(1).max(60), document_title: z.string().trim().min(1).max(120) });
+const dispatchTargetMonth = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
+const dispatchTargetSchema = z.object({ month: dispatchTargetMonth, orderTarget: z.number().int().positive(), valueTargetMinor: z.number().int().positive(), version: z.number().int().positive().nullable() });
+const currentColomboMonth = () => { const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Colombo", year: "numeric", month: "2-digit" }).formatToParts(new Date()); return `${parts.find((part) => part.type === "year")?.value}-${parts.find((part) => part.type === "month")?.value}`; };
+const colomboMonthBounds = (month: string) => {
+    const [year, monthNumber] = month.split("-").map(Number);
+    const at = (offset: number) => new Date(Date.UTC(year, monthNumber - 1 + offset, 1, -5, -30)).toISOString().replace("T", " ").replace(".000Z", "");
+    return { start: at(0), end: at(1) };
+};
+app.get("/api/dispatch-targets", async (c) => {
+    const denied = requireAdmin(c); if (denied) return denied;
+    const month = c.req.query("month") || currentColomboMonth();
+    if (!dispatchTargetMonth.safeParse(month).success) return fail("Invalid target month", 422);
+    const bounds = colomboMonthBounds(month);
+    const actual = await c.env.DB.prepare("SELECT COUNT(*) AS order_count,COALESCE(SUM(total_minor),0) AS value_minor FROM quotations WHERE deleted_at IS NULL AND cancelled_at IS NULL AND dispatched_at IS NOT NULL AND dispatched_at>=? AND dispatched_at<?").bind(bounds.start, bounds.end).first<{ order_count: number; value_minor: number }>();
+    const target = await c.env.DB.prepare("SELECT month_key,order_target,value_target_minor,version,updated_by_username,updated_at FROM dispatch_targets WHERE month_key=?").bind(month).first();
+    return json({ month, period: bounds, actual: { orders: actual?.order_count || 0, valueMinor: actual?.value_minor || 0 }, target: target || null, refreshedAt: new Date().toISOString() });
+});
+app.put("/api/dispatch-targets", async (c) => {
+    const denied = requireAdmin(c); if (denied) return denied;
+    const parsed = dispatchTargetSchema.safeParse(await c.req.json()); if (!parsed.success) return fail("Enter positive order and value targets.", 422);
+    const value = parsed.data; const user = c.get("user");
+    const current = await c.env.DB.prepare("SELECT version FROM dispatch_targets WHERE month_key=?").bind(value.month).first<{ version: number }>();
+    if (current && value.version !== current.version) return fail("Targets changed elsewhere. Refresh and try again.", 409);
+    if (!current && value.version !== null) return fail("Targets changed elsewhere. Refresh and try again.", 409);
+    try {
+        const result = current
+            ? await c.env.DB.prepare("UPDATE dispatch_targets SET order_target=?,value_target_minor=?,version=version+1,updated_by_user_id=?,updated_by_username=?,updated_at=CURRENT_TIMESTAMP WHERE month_key=? AND version=?").bind(value.orderTarget, value.valueTargetMinor, user.id, user.username, value.month, value.version).run()
+            : await c.env.DB.prepare("INSERT INTO dispatch_targets(month_key,order_target,value_target_minor,updated_by_user_id,updated_by_username) VALUES(?,?,?,?,?)").bind(value.month, value.orderTarget, value.valueTargetMinor, user.id, user.username).run();
+        if (current && !result.meta.changes) return fail("Targets changed elsewhere. Refresh and try again.", 409);
+    } catch { return fail("Targets changed elsewhere. Refresh and try again.", 409); }
+    return json(await c.env.DB.prepare("SELECT month_key,order_target,value_target_minor,version,updated_by_username,updated_at FROM dispatch_targets WHERE month_key=?").bind(value.month).first());
+});
 app.get("/api/settings", async (c) => { const denied = requireNotStorekeeper(c); if (denied) return denied; return json(await c.env.DB.prepare("SELECT * FROM settings WHERE id=1").first()); });
 app.put("/api/settings/pdf-header", async (c) => { const denied = requireAdmin(c); if (denied)
     return denied; const parsed = pdfHeaderSchema.safeParse(await c.req.json()); if (!parsed.success)
@@ -267,6 +330,7 @@ const jobSchema = z.object({ idempotencyKey: z.string().uuid(), repId: z.number(
 const jobEditSchema = z.object({ title: jobTitle, instructions: optional, dueDate: jobDate });
 const jobVisitSchema = z.object({ visited: z.boolean(), version: z.number().int().min(0) });
 const jobCancelSchema = z.object({ reason: z.string().trim().min(1).max(1000) });
+const jobResponseSchema = z.object({ response: z.enum(["ACCEPT", "REJECT"]), reason: z.string().trim().min(1).max(1000).optional() }).superRefine((value, context) => { if (value.response === "REJECT" && !value.reason) context.addIssue({ code: z.ZodIssueCode.custom, message: "A rejection reason is required" }); });
 async function jobDetail(db: D1Database, id: number) {
     const job = await db.prepare("SELECT j.*,u.username AS current_rep_username FROM jobs j LEFT JOIN users u ON u.id=j.assigned_rep_user_id WHERE j.id=?").bind(id).first<any>();
     if (!job) return null;
@@ -285,16 +349,24 @@ app.get("/api/jobs/buyer-preview", async (c) => {
     const rows = await c.env.DB.prepare("SELECT id,full_name,address FROM buyers WHERE active=1 AND LOWER(address) LIKE LOWER(?) ORDER BY full_name COLLATE NOCASE,id LIMIT 500").bind(`%${q}%`).all();
     return json(rows.results);
 });
+app.get("/api/jobs/address-suggestions", async (c) => {
+    const denied = requireAdmin(c); if (denied) return denied;
+    const q = (c.req.query("q") || "").trim();
+    if (!q) return json([]);
+    const rows = await c.env.DB.prepare("SELECT address FROM buyers WHERE active=1 AND LOWER(address) LIKE LOWER(?) GROUP BY LOWER(TRIM(address)) ORDER BY address COLLATE NOCASE LIMIT 50").bind(`%${q}%`).all();
+    return json(rows.results);
+});
 app.get("/api/jobs", async (c) => {
     const user = c.get("user");
     if (user.role === "STOREKEEPER") return fail("Storekeepers cannot access jobs", 403);
-    const status = ["all", "active", "completed", "cancelled"].includes((c.req.query("status") || "").toLowerCase()) ? (c.req.query("status") || "all").toUpperCase() : "ALL";
+    const requestedStatus = (c.req.query("status") || "").toLowerCase();
+    const status = ["all", "active", "completed", "cancelled", "rejected"].includes(requestedStatus) ? requestedStatus.toUpperCase() : "ALL";
     const scoped = user.role === "ADMIN" ? "" : "AND j.assigned_rep_user_id=?";
-    const statusSql = status === "ALL" ? "" : "AND j.status=?";
+    const statusSql = status === "ALL" ? "" : status === "REJECTED" ? "AND j.response_status='REJECTED'" : "AND j.status=?";
     const params: (string | number)[] = [];
     if (user.role !== "ADMIN") params.push(user.id);
-    if (status !== "ALL") params.push(status);
-    const rows = (await c.env.DB.prepare(`SELECT j.id,j.title,j.location_query,j.instructions,j.due_date,j.assigned_rep_user_id,j.assigned_rep_username,j.status,j.version,j.cancelled_at,j.cancellation_reason,j.created_at,j.updated_at, SUM(CASE WHEN ji.visited_at IS NOT NULL THEN 1 ELSE 0 END) AS visited_count,COUNT(ji.id) AS item_count FROM jobs j LEFT JOIN job_items ji ON ji.job_id=j.id WHERE 1=1 ${scoped} ${statusSql} GROUP BY j.id ORDER BY j.created_at DESC,j.id DESC`).bind(...params).all()).results;
+    if (status !== "ALL" && status !== "REJECTED") params.push(status);
+    const rows = (await c.env.DB.prepare(`SELECT j.id,j.title,j.location_query,j.instructions,j.due_date,j.assigned_rep_user_id,j.assigned_rep_username,j.status,j.response_status,j.responded_at,j.responded_by_username,j.rejection_reason,j.version,j.cancelled_at,j.cancellation_reason,j.created_at,j.updated_at, SUM(CASE WHEN ji.visited_at IS NOT NULL THEN 1 ELSE 0 END) AS visited_count,COUNT(ji.id) AS item_count FROM jobs j LEFT JOIN job_items ji ON ji.job_id=j.id WHERE 1=1 ${scoped} ${statusSql} GROUP BY j.id ORDER BY j.created_at DESC,j.id DESC`).bind(...params).all()).results;
     return json(rows);
 });
 app.get("/api/jobs/:id", async (c) => {
@@ -316,7 +388,7 @@ app.post("/api/jobs", async (c) => {
     const buyerById = new Map(buyers.map((buyer) => [buyer.id, buyer]));
     try {
         await c.env.DB.batch([
-            c.env.DB.prepare("INSERT INTO jobs(idempotency_key,title,location_query,instructions,due_date,assigned_rep_user_id,assigned_rep_username,created_by_user_id) VALUES(?,?,?,?,?,?,?,?)").bind(value.idempotencyKey, value.title, value.locationQuery, value.instructions || null, value.dueDate || null, rep.id, rep.username, user.id),
+            c.env.DB.prepare("INSERT INTO jobs(idempotency_key,title,location_query,instructions,due_date,assigned_rep_user_id,assigned_rep_username,created_by_user_id,response_status) VALUES(?,?,?,?,?,?,?,?, 'AWAITING_RESPONSE')").bind(value.idempotencyKey, value.title, value.locationQuery, value.instructions || null, value.dueDate || null, rep.id, rep.username, user.id),
             ...value.buyerIds.map((buyerId) => { const buyer = buyerById.get(buyerId)!; return c.env.DB.prepare("INSERT INTO job_items(job_id,buyer_id,buyer_name,buyer_address) VALUES((SELECT id FROM jobs WHERE idempotency_key=?),?,?,?)").bind(value.idempotencyKey, buyer.id, buyer.full_name, buyer.address); }),
             c.env.DB.prepare("INSERT INTO job_audit(job_id,action,actor_user_id,actor_username,detail) VALUES((SELECT id FROM jobs WHERE idempotency_key=?),'ASSIGNED',?,?,?)").bind(value.idempotencyKey, user.id, user.username, `Assigned to ${rep.username}`),
         ]);
@@ -327,8 +399,41 @@ app.post("/api/jobs", async (c) => {
     }
     const created = await c.env.DB.prepare("SELECT id FROM jobs WHERE idempotency_key=?").bind(value.idempotencyKey).first<{ id: number }>();
     const detail = await jobDetail(c.env.DB, created!.id);
-    await notify(c.env.DB, [{ id: rep.id, username: rep.username }], user.id, `job:${created!.id}:assigned`, "JOB_ASSIGNED", `New job: visit ${detail!.progress.total} shop${detail!.progress.total === 1 ? "" : "s"} in ${value.locationQuery}.`, "job", created!.id);
+    const eventKey = `job:${created!.id}:assigned`;
+    await notify(c.env.DB, [{ id: rep.id, username: rep.username }], user.id, eventKey, "JOB_ASSIGNED", `New job: visit ${detail!.progress.total} shop${detail!.progress.total === 1 ? "" : "s"} in ${value.locationQuery}.`, "job", created!.id);
+    scheduleEventPush(c, eventKey, "job assignment");
     return json(detail, 201);
+});
+app.post("/api/jobs/:id/response", async (c) => {
+    const user = c.get("user");
+    if (user.role !== "REP") return fail("Rep access required", 403);
+    const parsed = jobResponseSchema.safeParse(await c.req.json());
+    if (!parsed.success) return fail(parsed.error.issues[0]?.message || "Invalid job response", 422);
+    const id = Number(c.req.param("id"));
+    const requested = parsed.data.response === "ACCEPT" ? "ACCEPTED" : "REJECTED";
+    const reason = requested === "REJECTED" ? parsed.data.reason!.trim() : null;
+    const current = await c.env.DB.prepare("SELECT id,assigned_rep_user_id,status,response_status FROM jobs WHERE id=?").bind(id).first<{ id: number; assigned_rep_user_id: number | null; status: string; response_status: string }>();
+    if (!current || current.assigned_rep_user_id !== user.id) return fail("Job not found", 404);
+    if (current.status === "CANCELLED") return fail("Cancelled jobs cannot be responded to", 422);
+    if (current.response_status !== "AWAITING_RESPONSE") {
+        if (current.response_status === requested) return json(await jobDetail(c.env.DB, id));
+        return fail("This job already has a different response.", 409);
+    }
+    const update = c.env.DB.prepare("UPDATE jobs SET response_status=?,responded_at=CURRENT_TIMESTAMP,responded_by_user_id=?,responded_by_username=?,rejection_reason=?,updated_at=CURRENT_TIMESTAMP,version=version+1 WHERE id=? AND assigned_rep_user_id=? AND status!='CANCELLED' AND response_status='AWAITING_RESPONSE'").bind(requested, user.id, user.username, reason, id, user.id);
+    const audit = c.env.DB.prepare("INSERT INTO job_response_audit(job_id,action,actor_user_id,actor_username,reason) SELECT ?,?,?,?,? WHERE changes()=1").bind(id, requested, user.id, user.username, reason);
+    const results = await c.env.DB.batch([update, audit]);
+    const changed = (results[0] as D1Result).meta.changes > 0;
+    const detail = await jobDetail(c.env.DB, id);
+    if (!detail || detail.status === "CANCELLED") return fail("Cancelled jobs cannot be responded to", 422);
+    if (!changed) {
+        if (detail.response_status === requested) return json(detail);
+        return fail("This job already has a different response.", 409);
+    }
+    const verb = requested === "ACCEPTED" ? "accepted" : "rejected";
+    const eventKey = `job:${id}:response:${requested}:${detail.version}`;
+    await notify(c.env.DB, await activeRecipients(c.env.DB, ["ADMIN"]), user.id, eventKey, requested === "ACCEPTED" ? "JOB_ACCEPTED" : "JOB_REJECTED", `${user.username} ${verb} the job: ${detail.title}.`, "job", id);
+    scheduleEventPush(c, eventKey, "job response");
+    return json(detail);
 });
 app.put("/api/jobs/:id", async (c) => {
     const denied = requireAdmin(c); if (denied) return denied;
@@ -336,7 +441,7 @@ app.put("/api/jobs/:id", async (c) => {
     const id = Number(c.req.param("id")); const result = await c.env.DB.prepare("UPDATE jobs SET title=?,instructions=?,due_date=?,updated_at=CURRENT_TIMESTAMP,version=version+1 WHERE id=? AND status!='CANCELLED'").bind(parsed.data.title, parsed.data.instructions || null, parsed.data.dueDate || null, id).run();
     if (!result.meta.changes) return fail("Active job not found", 404);
     const user = c.get("user"); await c.env.DB.prepare("INSERT INTO job_audit(job_id,action,actor_user_id,actor_username,detail) VALUES(?, 'UPDATED', ?, ?, 'Job details updated')").bind(id, user.id, user.username).run();
-    const detail = await jobDetail(c.env.DB, id); await notify(c.env.DB, [{ id: detail!.assigned_rep_user_id!, username: detail!.assigned_rep_username }], user.id, `job:${id}:updated:${detail!.version}`, "JOB_UPDATED", `Job updated: ${detail!.title}.`, "job", id);
+    const detail = await jobDetail(c.env.DB, id); const eventKey = `job:${id}:updated:${detail!.version}`; await notify(c.env.DB, [{ id: detail!.assigned_rep_user_id!, username: detail!.assigned_rep_username }], user.id, eventKey, "JOB_UPDATED", `Job updated: ${detail!.title}.`, "job", id); scheduleEventPush(c, eventKey, "job update");
     return json(detail);
 });
 app.post("/api/jobs/:id/cancel", async (c) => {
@@ -346,18 +451,19 @@ app.post("/api/jobs/:id/cancel", async (c) => {
     const update = c.env.DB.prepare("UPDATE jobs SET status='CANCELLED',cancelled_at=CURRENT_TIMESTAMP,cancelled_by_user_id=?,cancellation_reason=?,updated_at=CURRENT_TIMESTAMP,version=version+1 WHERE id=? AND status!='CANCELLED'").bind(user.id, parsed.data.reason, id);
     const audit = c.env.DB.prepare("INSERT INTO job_audit(job_id,action,actor_user_id,actor_username,detail) SELECT ?, 'CANCELLED', ?, ?, ? WHERE changes()=1").bind(id, user.id, user.username, parsed.data.reason);
     await c.env.DB.batch([update, audit]);
-    const result = await jobDetail(c.env.DB, id); if (!result || result.status !== "CANCELLED") return fail("Active job not found", 404); await notify(c.env.DB, [{ id: result.assigned_rep_user_id!, username: result.assigned_rep_username }], user.id, `job:${id}:cancelled`, "JOB_CANCELLED", `Job cancelled: ${result.title}.`, "job", id);
+    const result = await jobDetail(c.env.DB, id); if (!result || result.status !== "CANCELLED") return fail("Active job not found", 404); const eventKey = `job:${id}:cancelled`; await notify(c.env.DB, [{ id: result.assigned_rep_user_id!, username: result.assigned_rep_username }], user.id, eventKey, "JOB_CANCELLED", `Job cancelled: ${result.title}.`, "job", id); scheduleEventPush(c, eventKey, "job cancellation");
     return json(result);
 });
 app.put("/api/jobs/:id/items/:itemId", async (c) => {
     const user = c.get("user"); if (user.role !== "REP") return fail("Rep access required", 403);
     const parsed = jobVisitSchema.safeParse(await c.req.json()); if (!parsed.success) return fail("Invalid visit update");
     const id = Number(c.req.param("id")), itemId = Number(c.req.param("itemId"));
-    const item = await c.env.DB.prepare("SELECT ji.id,ji.version,j.assigned_rep_user_id,j.status FROM job_items ji JOIN jobs j ON j.id=ji.job_id WHERE ji.id=? AND ji.job_id=?").bind(itemId, id).first<{ id: number; version: number; assigned_rep_user_id: number | null; status: string }>();
+    const item = await c.env.DB.prepare("SELECT ji.id,ji.version,j.assigned_rep_user_id,j.status,j.response_status FROM job_items ji JOIN jobs j ON j.id=ji.job_id WHERE ji.id=? AND ji.job_id=?").bind(itemId, id).first<{ id: number; version: number; assigned_rep_user_id: number | null; status: string; response_status: string }>();
     if (!item || item.assigned_rep_user_id !== user.id) return fail("Job item not found", 404);
     if (item.status === "CANCELLED") return fail("Cancelled jobs are read-only", 422);
+    if (item.response_status !== "ACCEPTED") return fail("Accept this job before updating visits.", 422);
     if (item.version !== parsed.data.version) return fail("This visit changed elsewhere. Refresh and try again.", 409);
-    const update = await c.env.DB.prepare("UPDATE job_items SET visited_at=CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE NULL END,visited_by_user_id=CASE WHEN ? THEN ? ELSE NULL END,visited_by_username=CASE WHEN ? THEN ? ELSE NULL END,version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND job_id=? AND version=? AND EXISTS(SELECT 1 FROM jobs WHERE id=? AND status!='CANCELLED')").bind(parsed.data.visited ? 1 : 0, parsed.data.visited ? 1 : 0, user.id, parsed.data.visited ? 1 : 0, user.username, itemId, id, parsed.data.version, id).run();
+    const update = await c.env.DB.prepare("UPDATE job_items SET visited_at=CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE NULL END,visited_by_user_id=CASE WHEN ? THEN ? ELSE NULL END,visited_by_username=CASE WHEN ? THEN ? ELSE NULL END,version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=? AND job_id=? AND version=? AND EXISTS(SELECT 1 FROM jobs WHERE id=? AND status!='CANCELLED' AND response_status='ACCEPTED')").bind(parsed.data.visited ? 1 : 0, parsed.data.visited ? 1 : 0, user.id, parsed.data.visited ? 1 : 0, user.username, itemId, id, parsed.data.version, id).run();
     if (!update.meta.changes) return fail("This visit changed elsewhere. Refresh and try again.", 409);
     const remaining = await c.env.DB.prepare("SELECT COUNT(*) AS count FROM job_items WHERE job_id=? AND visited_at IS NULL").bind(id).first<{ count: number }>();
     const nextStatus = (remaining?.count || 0) === 0 ? "COMPLETED" : "ACTIVE";
@@ -369,7 +475,11 @@ app.put("/api/jobs/:id/items/:itemId", async (c) => {
         ...(nextStatus === "ACTIVE" && wasCompleted ? [c.env.DB.prepare("INSERT INTO job_audit(job_id,action,actor_user_id,actor_username) VALUES(?,?,?,?)").bind(id, "REOPENED", user.id, user.username)] : []),
     ]);
     const detail = await jobDetail(c.env.DB, id);
-    if ((nextStatus === "COMPLETED" && !wasCompleted) || (nextStatus === "ACTIVE" && wasCompleted)) await notify(c.env.DB, await activeRecipients(c.env.DB, ["ADMIN"]), user.id, `job:${id}:${nextStatus.toLowerCase()}:${detail!.version}`, nextStatus === "COMPLETED" ? "JOB_COMPLETED" : "JOB_REOPENED", nextStatus === "COMPLETED" ? `${user.username} completed all ${detail!.progress.total} visits in ${detail!.location_query}.` : `${user.username} reopened job ${detail!.title}.`, "job", id);
+    if ((nextStatus === "COMPLETED" && !wasCompleted) || (nextStatus === "ACTIVE" && wasCompleted)) {
+        const eventKey = `job:${id}:${nextStatus.toLowerCase()}:${detail!.version}`;
+        await notify(c.env.DB, await activeRecipients(c.env.DB, ["ADMIN"]), user.id, eventKey, nextStatus === "COMPLETED" ? "JOB_COMPLETED" : "JOB_REOPENED", nextStatus === "COMPLETED" ? `${user.username} completed all ${detail!.progress.total} visits in ${detail!.location_query}.` : `${user.username} reopened job ${detail!.title}.`, "job", id);
+        scheduleEventPush(c, eventKey, nextStatus === "COMPLETED" ? "job completion" : "job reopening");
+    }
     return json(detail);
 });
 const orderSchema = z.object({ idempotencyKey: z.string().uuid(), buyerId: z.number().int().positive(), quotationDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), validUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(), notes: optional, items: z.array(z.object({ productId: z.number().int().positive(), quantity: z.number().int().min(1).max(9999), unitPriceMinor: z.number().int().min(0).optional() })).min(1).max(100) });
@@ -553,5 +663,8 @@ app.delete("/api/quotations/:id", async (c) => {
 app.all("*", c => c.env.ASSETS.fetch(c.req.raw));
 export default {
     fetch: app.fetch,
-    scheduled: (_controller: ScheduledController, env: Bindings, ctx: ExecutionContext) => ctx.waitUntil(deliverPushOutbox(env).catch(() => undefined)),
+    scheduled: (controller: ScheduledController, env: Bindings, ctx: ExecutionContext) => {
+        if (controller.cron === "0 4 * * *") ctx.waitUntil(runDailyPendingDispatchReminder(env).catch((error) => console.warn(`daily pending-dispatch reminder failed: ${(error as Error).name || "Error"}`)));
+        ctx.waitUntil(deliverPushOutbox(env).catch(() => undefined));
+    },
 };

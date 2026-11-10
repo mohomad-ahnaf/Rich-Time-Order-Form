@@ -1,0 +1,137 @@
+
+ ⛅️ wrangler 4.156.2
+────────────────────
+
+Cloudflare collects anonymous telemetry about your usage of Wrangler. Learn more at https://github.com/cloudflare/workers-sdk/tree/main/packages/wrangler/telemetry.md
+Your Worker has access to the following bindings:
+Binding                                                                   Resource                  Mode
+env.DB (rsk-job-response-isolated)                                        D1 Database               local
+env.ASSETS                                                                Assets                    local
+env.OWNER_USERNAME ("TestAdmin")                                          Environment Variable      local
+env.OWNER_PASSWORD_HASH ("pbkdf2$210000$U5-T3ctB4-ir44jvafI6OQ$...")      Environment Variable      local
+env.SESSION_SECRET ("isolated-job-response-session-secret")               Environment Variable      local
+env.VAPID_PUBLIC_KEY ("test-only-public-key")                             Environment Variable      local
+env.VAPID_PRIVATE_KEY ("test-only-private-key")                           Environment Variable      local
+env.VAPID_SUBJECT ("mailto:tests@example.invalid")                        Environment Variable      local
+env.PUSH_TEST_MODE ("1")                                                  Environment Variable      local
+
+⎔ Starting local server...
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mScheduled Workers are not automatically triggered during local development.[0m
+
+  To manually trigger a scheduled event, run:
+    curl "http://127.0.0.1:8803/cdn-cgi/local/scheduled"
+  For more details, see [4mhttps://developers.cloudflare.com/workers/configuration/cron-triggers/#test-cron-triggers-locally[0m
+
+
+Wrangler detected this dev session is running in an AI agent.
+The Local Explorer API is available at http://127.0.0.1:8803/cdn-cgi/local/explorer/api
+Useful routes:
+  GET http://127.0.0.1:8803/cdn-cgi/local/explorer/api/local/workers - local Workers and bindings
+  POST http://127.0.0.1:8803/cdn-cgi/local/explorer/api/local/scheduled?worker=<name> - invoke a Worker's scheduled handler; cron is required (see the OpenAPI schema for the full request)
+  GET http://127.0.0.1:8803/cdn-cgi/local/explorer/api/storage/kv/namespaces - KV namespaces
+  GET http://127.0.0.1:8803/cdn-cgi/local/explorer/api/d1/database - D1 databases
+  GET http://127.0.0.1:8803/cdn-cgi/local/explorer/api/r2/buckets - R2 buckets
+  GET http://127.0.0.1:8803/cdn-cgi/local/explorer/api/workers/durable_objects/namespaces - Durable Object namespaces
+  GET http://127.0.0.1:8803/cdn-cgi/local/explorer/api/workflows - Workflows
+  POST http://127.0.0.1:8803/cdn-cgi/local/explorer/api/local/observability/query - run a read-only SQL query (SELECT/WITH only) over captured request traces and console logs. Tables: spans, logs (read attributes via json(attributes)). Example:
+    curl -X POST http://127.0.0.1:8803/cdn-cgi/local/explorer/api/local/observability/query -H 'Content-Type: application/json' -d '{"sql":"SELECT service, name, outcome, duration_ms FROM spans WHERE parent_id IS NULL LIMIT 20"}'
+  POST http://127.0.0.1:8803/cdn-cgi/local/explorer/api/local/observability/clear - clear all captured traces and logs
+If the routes above don't cover what you need, fetch the full OpenAPI schema (large - use only as a last resort):
+  GET http://127.0.0.1:8803/cdn-cgi/local/explorer/api - OpenAPI schema
+[wrangler:info] Ready on http://127.0.0.1:8803
+[wrangler:info] POST /api/login 204 No Content (485ms)
+[wrangler:info] GET /api/session 200 OK (34ms)
+[wrangler:info] POST /api/accounts 201 Created (403ms)
+[wrangler:info] POST /api/accounts 201 Created (392ms)
+[wrangler:info] POST /api/accounts 201 Created (306ms)
+[wrangler:info] POST /api/login 204 No Content (382ms)
+[wrangler:info] GET /api/session 200 OK (31ms)
+[wrangler:info] POST /api/login 204 No Content (393ms)
+[wrangler:info] GET /api/session 200 OK (32ms)
+[wrangler:info] POST /api/login 204 No Content (416ms)
+[wrangler:info] GET /api/session 200 OK (31ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (37ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (42ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (37ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (40ms)
+[wrangler:info] POST /api/buyers 201 Created (45ms)
+[wrangler:info] POST /api/products 201 Created (44ms)
+notification queued id=1 type=ORDER_CONFIRMED recipient=1
+notification queued id=2 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (132ms)
+notification queued id=3 type=ORDER_CONFIRMED recipient=1
+notification queued id=4 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (113ms)
+notification queued id=5 type=ORDER_CONFIRMED recipient=1
+notification queued id=6 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (121ms)
+notification queued id=7 type=ORDER_CONFIRMED recipient=1
+notification queued id=8 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (122ms)
+notification queued id=9 type=ORDER_HIDDEN recipient=4
+notification queued id=10 type=ORDER_HIDDEN recipient=2
+[wrangler:info] PUT /api/quotations/2/visibility 200 OK (104ms)
+notification queued id=11 type=ORDER_CANCELLED recipient=4
+notification queued id=12 type=ORDER_CANCELLED recipient=2
+[wrangler:info] POST /api/quotations/3/cancel 200 OK (87ms)
+[wrangler:info] GET /api/quotations/4 200 OK (48ms)
+[wrangler:info] PUT /api/quotations/4/packing 200 OK (70ms)
+notification queued id=13 type=ORDER_DISPATCHED recipient=1
+notification queued id=14 type=ORDER_DISPATCHED recipient=2
+[wrangler:info] POST /api/quotations/4/dispatch 200 OK (101ms)
+push delivery claimed notification=1 outbox=1
+notification queued id=15 type=DAILY_PENDING_DISPATCH_ADMIN recipient=1
+push provider accepted notification=1 device=6TbgMnr74LWd
+push delivery claimed notification=15 outbox=15
+push delivery claimed notification=2 outbox=2
+push provider accepted notification=15 device=6TbgMnr74LWd
+push provider accepted notification=2 device=aqRZ8lHO72hM
+push delivery claimed notification=3 outbox=3
+notification queued id=16 type=DAILY_PENDING_DISPATCH_REP recipient=2
+push provider accepted notification=3 device=6TbgMnr74LWd
+push delivery claimed notification=16 outbox=16
+push delivery claimed notification=4 outbox=4
+push provider accepted notification=16 device=IwANnMvRiJBD
+push provider accepted notification=4 device=aqRZ8lHO72hM
+push delivery claimed notification=5 outbox=5
+notification queued id=17 type=DAILY_PENDING_DISPATCH_REP recipient=3
+push provider accepted notification=5 device=6TbgMnr74LWd
+push delivery claimed notification=17 outbox=17
+push delivery claimed notification=6 outbox=6
+push provider accepted notification=17 device=R5uqXlv4Dr5_
+push provider accepted notification=6 device=aqRZ8lHO72hM
+push delivery claimed notification=7 outbox=7
+notification queued id=18 type=DAILY_PENDING_DISPATCH_STOREKEEPER recipient=4
+push provider accepted notification=7 device=6TbgMnr74LWd
+push delivery claimed notification=18 outbox=18
+push delivery claimed notification=8 outbox=8
+push provider accepted notification=18 device=aqRZ8lHO72hM
+push provider accepted notification=8 device=aqRZ8lHO72hM
+push delivery claimed notification=9 outbox=9
+push provider accepted notification=9 device=aqRZ8lHO72hM
+push delivery claimed notification=10 outbox=10
+push provider accepted notification=10 device=IwANnMvRiJBD
+[wrangler:info] GET /api/notifications 200 OK (71ms)
+[wrangler:info] GET /api/notifications 200 OK (57ms)
+[wrangler:info] GET /api/notifications 200 OK (44ms)
+[wrangler:info] GET /api/notifications 200 OK (40ms)
+[wrangler:info] GET /api/notifications/15/delivery 200 OK (36ms)
+[wrangler:info] GET /api/notifications/16/delivery 200 OK (35ms)
+[wrangler:info] GET /api/notifications/17/delivery 200 OK (34ms)
+[wrangler:info] GET /api/notifications/18/delivery 200 OK (38ms)
+push delivery claimed notification=11 outbox=11
+notification deduplicated id=15 type=DAILY_PENDING_DISPATCH_ADMIN recipient=1
+push provider accepted notification=11 device=aqRZ8lHO72hM
+push delivery claimed notification=12 outbox=12
+notification deduplicated id=16 type=DAILY_PENDING_DISPATCH_REP recipient=2
+push provider accepted notification=12 device=IwANnMvRiJBD
+push delivery claimed notification=13 outbox=13
+notification deduplicated id=17 type=DAILY_PENDING_DISPATCH_REP recipient=3
+push provider accepted notification=13 device=6TbgMnr74LWd
+push delivery claimed notification=14 outbox=14
+notification deduplicated id=18 type=DAILY_PENDING_DISPATCH_STOREKEEPER recipient=4
+push provider accepted notification=14 device=IwANnMvRiJBD
+[wrangler:info] GET /api/notifications 200 OK (63ms)
+[wrangler:info] GET /api/notifications 200 OK (56ms)
+[wrangler:info] GET /api/notifications 200 OK (62ms)
+[wrangler:info] GET /api/notifications 200 OK (34ms)

@@ -1,0 +1,88 @@
+
+ ⛅️ wrangler 4.156.2
+────────────────────
+
+Cloudflare collects anonymous telemetry about your usage of Wrangler. Learn more at https://github.com/cloudflare/workers-sdk/tree/main/packages/wrangler/telemetry.md
+Your Worker has access to the following bindings:
+Binding                                                                   Resource                  Mode
+env.DB (rsk-job-response-isolated)                                        D1 Database               local
+env.ASSETS                                                                Assets                    local
+env.OWNER_USERNAME ("TestAdmin")                                          Environment Variable      local
+env.OWNER_PASSWORD_HASH ("pbkdf2$210000$U5-T3ctB4-ir44jvafI6OQ$...")      Environment Variable      local
+env.SESSION_SECRET ("isolated-job-response-session-secret")               Environment Variable      local
+env.VAPID_PUBLIC_KEY ("test-only-public-key")                             Environment Variable      local
+env.VAPID_PRIVATE_KEY ("test-only-private-key")                           Environment Variable      local
+env.VAPID_SUBJECT ("mailto:tests@example.invalid")                        Environment Variable      local
+env.PUSH_TEST_MODE ("1")                                                  Environment Variable      local
+
+⎔ Starting local server...
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mScheduled Workers are not automatically triggered during local development.[0m
+
+  To manually trigger a scheduled event, run:
+    curl "http://127.0.0.1:8804/cdn-cgi/local/scheduled"
+  For more details, see [4mhttps://developers.cloudflare.com/workers/configuration/cron-triggers/#test-cron-triggers-locally[0m
+
+
+Wrangler detected this dev session is running in an AI agent.
+The Local Explorer API is available at http://127.0.0.1:8804/cdn-cgi/local/explorer/api
+Useful routes:
+  GET http://127.0.0.1:8804/cdn-cgi/local/explorer/api/local/workers - local Workers and bindings
+  POST http://127.0.0.1:8804/cdn-cgi/local/explorer/api/local/scheduled?worker=<name> - invoke a Worker's scheduled handler; cron is required (see the OpenAPI schema for the full request)
+  GET http://127.0.0.1:8804/cdn-cgi/local/explorer/api/storage/kv/namespaces - KV namespaces
+  GET http://127.0.0.1:8804/cdn-cgi/local/explorer/api/d1/database - D1 databases
+  GET http://127.0.0.1:8804/cdn-cgi/local/explorer/api/r2/buckets - R2 buckets
+  GET http://127.0.0.1:8804/cdn-cgi/local/explorer/api/workers/durable_objects/namespaces - Durable Object namespaces
+  GET http://127.0.0.1:8804/cdn-cgi/local/explorer/api/workflows - Workflows
+  POST http://127.0.0.1:8804/cdn-cgi/local/explorer/api/local/observability/query - run a read-only SQL query (SELECT/WITH only) over captured request traces and console logs. Tables: spans, logs (read attributes via json(attributes)). Example:
+    curl -X POST http://127.0.0.1:8804/cdn-cgi/local/explorer/api/local/observability/query -H 'Content-Type: application/json' -d '{"sql":"SELECT service, name, outcome, duration_ms FROM spans WHERE parent_id IS NULL LIMIT 20"}'
+  POST http://127.0.0.1:8804/cdn-cgi/local/explorer/api/local/observability/clear - clear all captured traces and logs
+If the routes above don't cover what you need, fetch the full OpenAPI schema (large - use only as a last resort):
+  GET http://127.0.0.1:8804/cdn-cgi/local/explorer/api - OpenAPI schema
+[wrangler:info] Ready on http://127.0.0.1:8804
+[wrangler:info] POST /api/login 204 No Content (297ms)
+[wrangler:info] GET /api/session 200 OK (23ms)
+[wrangler:info] POST /api/accounts 201 Created (234ms)
+[wrangler:info] POST /api/accounts 201 Created (296ms)
+[wrangler:info] POST /api/login 204 No Content (262ms)
+[wrangler:info] GET /api/session 200 OK (27ms)
+[wrangler:info] POST /api/login 204 No Content (260ms)
+[wrangler:info] GET /api/session 200 OK (21ms)
+[wrangler:info] GET /api/dispatch-targets 403 Forbidden (20ms)
+[wrangler:info] GET /api/dispatch-targets 403 Forbidden (19ms)
+[wrangler:info] PUT /api/dispatch-targets 403 Forbidden (21ms)
+[wrangler:info] GET /api/dispatch-targets 200 OK (27ms)
+[wrangler:info] PUT /api/dispatch-targets 422 Unprocessable Entity (24ms)
+[wrangler:info] PUT /api/dispatch-targets 422 Unprocessable Entity (20ms)
+[wrangler:info] PUT /api/dispatch-targets 422 Unprocessable Entity (24ms)
+[wrangler:info] PUT /api/dispatch-targets 200 OK (31ms)
+[wrangler:info] GET /api/dispatch-targets 200 OK (27ms)
+[wrangler:info] GET /api/dispatch-targets 200 OK (26ms)
+[wrangler:info] PUT /api/dispatch-targets 200 OK (34ms)
+[wrangler:info] PUT /api/dispatch-targets 409 Conflict (25ms)
+[wrangler:info] GET /api/dispatch-targets 200 OK (26ms)
+[wrangler:info] POST /api/buyers 201 Created (26ms)
+[wrangler:info] POST /api/products 201 Created (28ms)
+notification queued id=1 type=ORDER_CONFIRMED recipient=1
+notification queued id=2 type=ORDER_CONFIRMED recipient=3
+[wrangler:info] POST /api/quotations 201 Created (80ms)
+notification queued id=3 type=ORDER_CONFIRMED recipient=1
+notification queued id=4 type=ORDER_CONFIRMED recipient=3
+[wrangler:info] POST /api/quotations 201 Created (84ms)
+notification queued id=5 type=ORDER_CONFIRMED recipient=1
+notification queued id=6 type=ORDER_CONFIRMED recipient=3
+[wrangler:info] POST /api/quotations 201 Created (73ms)
+notification queued id=7 type=ORDER_CONFIRMED recipient=1
+notification queued id=8 type=ORDER_CONFIRMED recipient=3
+[wrangler:info] POST /api/quotations 201 Created (79ms)
+notification queued id=9 type=ORDER_HIDDEN recipient=3
+notification queued id=10 type=ORDER_HIDDEN recipient=2
+[wrangler:info] PUT /api/quotations/2/visibility 200 OK (59ms)
+notification queued id=11 type=ORDER_CANCELLED recipient=3
+notification queued id=12 type=ORDER_CANCELLED recipient=2
+[wrangler:info] POST /api/quotations/3/cancel 200 OK (63ms)
+[wrangler:info] GET /api/quotations/1 200 OK (33ms)
+[wrangler:info] PUT /api/quotations/1/packing 200 OK (44ms)
+notification queued id=13 type=ORDER_DISPATCHED recipient=1
+notification queued id=14 type=ORDER_DISPATCHED recipient=2
+[wrangler:info] POST /api/quotations/1/dispatch 200 OK (66ms)
+[wrangler:info] GET /api/quotations/2 404 Not Found (21ms)

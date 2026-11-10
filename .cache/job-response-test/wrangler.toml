@@ -1,0 +1,22 @@
+name = "rsk-job-response-isolated"
+main = "../../src/worker.ts"
+compatibility_date = "2025-01-29"
+assets = { directory = "../../dist", binding = "ASSETS", not_found_handling = "single-page-application" }
+
+[vars]
+OWNER_USERNAME = "TestAdmin"
+OWNER_PASSWORD_HASH = "pbkdf2$210000$U5-T3ctB4-ir44jvafI6OQ$JqKNWVwYjfPh-0gVFo6KcYosriDJBBCWPPti6WV9cAI"
+SESSION_SECRET = "isolated-job-response-session-secret"
+VAPID_PUBLIC_KEY = "test-only-public-key"
+VAPID_PRIVATE_KEY = "test-only-private-key"
+VAPID_SUBJECT = "mailto:tests@example.invalid"
+PUSH_TEST_MODE = "1"
+
+[triggers]
+crons = ["*/5 * * * *", "0 4 * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rsk-job-response-isolated"
+database_id = "LOCAL_TEST_ONLY_JOB_RESPONSE"
+migrations_dir = "../../migrations"
