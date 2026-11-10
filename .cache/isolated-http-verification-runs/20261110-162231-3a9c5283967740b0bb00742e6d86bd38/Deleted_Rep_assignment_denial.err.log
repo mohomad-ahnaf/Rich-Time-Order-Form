@@ -1,0 +1,4 @@
+Error: Could not create disposable Rep
+    at fail (F:\Business\Rich Time\scripts\verify-job-deleted-rep-isolated.ts:2:50)
+    at main (F:\Business\Rich Time\scripts\verify-job-deleted-rep-isolated.ts:7:193)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)

@@ -1,0 +1,22 @@
+name = "rsk-isolated-http-verification"
+main = "F:/Business/Rich Time/src/worker.ts"
+compatibility_date = "2025-01-29"
+assets = { directory = "F:/Business/Rich Time/dist", binding = "ASSETS", not_found_handling = "single-page-application" }
+
+[vars]
+OWNER_USERNAME = "Admin"
+OWNER_PASSWORD_HASH = "pbkdf2$210000$lQAgdllA6ba3U8otdVQaMw$jR24GJCjXmjzmHzvLOvACoY7yQlZHpI7q3Drva-Jwek"
+SESSION_SECRET = "isolated-http-verification-session-secret"
+VAPID_PUBLIC_KEY = "test-only-public-key"
+VAPID_PRIVATE_KEY = "test-only-private-key"
+VAPID_SUBJECT = "mailto:tests@example.invalid"
+PUSH_TEST_MODE = "1"
+
+[triggers]
+crons = ["*/5 * * * *", "0 4 * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rsk-isolated-202611101958420692be2a6c33482e9d381a8af0691b27"
+database_id = "67bc5482-473d-43d5-a308-79b3ef516f52"
+migrations_dir = "F:/Business/Rich Time/migrations"

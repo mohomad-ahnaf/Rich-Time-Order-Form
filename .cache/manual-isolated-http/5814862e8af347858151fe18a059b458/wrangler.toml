@@ -1,0 +1,17 @@
+name = "manual-isolated-5814862e8af347858151fe18a059b458"
+main = "F:/Business/Rich Time/src/worker.ts"
+compatibility_date = "2025-01-29"
+assets = { directory = "F:/Business/Rich Time/dist", binding = "ASSETS", not_found_handling = "single-page-application" }
+[vars]
+OWNER_USERNAME = "Admin"
+OWNER_PASSWORD_HASH = "pbkdf2$210000$GDhq9a5OU04gT5t-4DYOUg$ZADrX6fuSuZ3s7__-6-1c_TnLiyBMPuSySYNpccPE6w"
+SESSION_SECRET = "manual-isolated-dummy-session-secret"
+VAPID_PUBLIC_KEY = "test-only-public-key"
+VAPID_PRIVATE_KEY = "test-only-private-key"
+VAPID_SUBJECT = "mailto:tests@example.invalid"
+PUSH_TEST_MODE = "1"
+[[d1_databases]]
+binding = "DB"
+database_name = "manual-isolated-5814862e8af347858151fe18a059b458"
+database_id = "57f75b01-009a-4f57-bcd4-cdb5a4c00684"
+migrations_dir = "F:/Business/Rich Time/migrations"

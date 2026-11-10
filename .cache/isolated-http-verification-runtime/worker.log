@@ -1,0 +1,1729 @@
+
+ ⛅️ wrangler 4.156.2
+────────────────────
+
+Cloudflare collects anonymous telemetry about your usage of Wrangler. Learn more at https://github.com/cloudflare/workers-sdk/tree/main/packages/wrangler/telemetry.md
+Your Worker has access to the following bindings:
+Binding                                                                   Resource                  Mode
+env.DB (rsk-isolated-http-verification)                                   D1 Database               local
+env.ASSETS                                                                Assets                    local
+env.OWNER_USERNAME ("Admin")                                              Environment Variable      local
+env.OWNER_PASSWORD_HASH ("pbkdf2$210000$3G8tkjapN7RYnqTBT8XLiA$...")      Environment Variable      local
+env.SESSION_SECRET ("isolated-http-verification-session-se...")           Environment Variable      local
+env.VAPID_PUBLIC_KEY ("test-only-public-key")                             Environment Variable      local
+env.VAPID_PRIVATE_KEY ("test-only-private-key")                           Environment Variable      local
+env.VAPID_SUBJECT ("mailto:tests@example.invalid")                        Environment Variable      local
+env.PUSH_TEST_MODE ("1")                                                  Environment Variable      local
+
+⎔ Starting local server...
+Wrangler detected this dev session is running in an AI agent.
+The Local Explorer API is available at http://127.0.0.1:8810/cdn-cgi/local/explorer/api
+Useful routes:
+  GET http://127.0.0.1:8810/cdn-cgi/local/explorer/api/local/workers - local Workers and bindings
+  POST http://127.0.0.1:8810/cdn-cgi/local/explorer/api/local/scheduled?worker=<name> - invoke a Worker's scheduled handler; cron is required (see the OpenAPI schema for the full request)
+  GET http://127.0.0.1:8810/cdn-cgi/local/explorer/api/storage/kv/namespaces - KV namespaces
+  GET http://127.0.0.1:8810/cdn-cgi/local/explorer/api/d1/database - D1 databases
+  GET http://127.0.0.1:8810/cdn-cgi/local/explorer/api/r2/buckets - R2 buckets
+  GET http://127.0.0.1:8810/cdn-cgi/local/explorer/api/workers/durable_objects/namespaces - Durable Object namespaces
+  GET http://127.0.0.1:8810/cdn-cgi/local/explorer/api/workflows - Workflows
+  POST http://127.0.0.1:8810/cdn-cgi/local/explorer/api/local/observability/query - run a read-only SQL query (SELECT/WITH only) over captured request traces and console logs. Tables: spans, logs (read attributes via json(attributes)). Example:
+    curl -X POST http://127.0.0.1:8810/cdn-cgi/local/explorer/api/local/observability/query -H 'Content-Type: application/json' -d '{"sql":"SELECT service, name, outcome, duration_ms FROM spans WHERE parent_id IS NULL LIMIT 20"}'
+  POST http://127.0.0.1:8810/cdn-cgi/local/explorer/api/local/observability/clear - clear all captured traces and logs
+If the routes above don't cover what you need, fetch the full OpenAPI schema (large - use only as a last resort):
+  GET http://127.0.0.1:8810/cdn-cgi/local/explorer/api - OpenAPI schema
+[wrangler:info] Ready on http://127.0.0.1:8810
+[wrangler:info] GET /api/session 401 Unauthorized (677ms)
+[wrangler:info] GET /api/session 401 Unauthorized (13ms)
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+[wrangler:info] GET /api/session 401 Unauthorized (36ms)
+[wrangler:info] POST /api/login 204 No Content (152ms)
+[wrangler:info] GET /api/session 200 OK (12ms)
+[wrangler:info] POST /api/accounts 201 Created (144ms)
+[wrangler:info] POST /api/accounts 201 Created (142ms)
+[wrangler:info] POST /api/accounts 201 Created (209ms)
+[wrangler:info] POST /api/accounts 201 Created (195ms)
+[wrangler:info] PUT /api/accounts/5 200 OK (35ms)
+[wrangler:info] POST /api/buyers 201 Created (28ms)
+[wrangler:info] POST /api/buyers 201 Created (30ms)
+[wrangler:info] POST /api/buyers 201 Created (25ms)
+[wrangler:info] GET /api/jobs/buyer-preview 200 OK (26ms)
+[wrangler:info] POST /api/jobs 422 Unprocessable Entity (26ms)
+notification queued id=1 type=JOB_ASSIGNED recipient=2
+push delivery claimed notification=1 outbox=1
+[wrangler:info] POST /api/jobs 201 Created (82ms)
+[wrangler:info] POST /api/jobs 200 OK (27ms)
+[wrangler:info] POST /api/login 204 No Content (217ms)
+[wrangler:info] GET /api/session 200 OK (21ms)
+[wrangler:info] POST /api/login 204 No Content (202ms)
+[wrangler:info] GET /api/session 200 OK (15ms)
+[wrangler:info] POST /api/login 204 No Content (266ms)
+[wrangler:info] GET /api/session 200 OK (26ms)
+notification queued id=2 type=JOB_ACCEPTED recipient=1
+push delivery claimed notification=2 outbox=2
+[wrangler:info] POST /api/jobs/1/response 200 OK (50ms)
+notification queued id=3 type=JOB_ASSIGNED recipient=3
+push delivery claimed notification=3 outbox=3
+[wrangler:info] POST /api/jobs 201 Created (56ms)
+[wrangler:info] GET /api/jobs 200 OK (16ms)
+[wrangler:info] GET /api/jobs/2 404 Not Found (17ms)
+[wrangler:info] PUT /api/jobs/2/items/3 404 Not Found (59ms)
+[wrangler:info] POST /api/jobs 403 Forbidden (22ms)
+[wrangler:info] GET /api/jobs 403 Forbidden (37ms)
+[wrangler:info] GET /api/jobs/1 404 Not Found (23ms)
+[wrangler:info] GET /api/jobs/1 200 OK (17ms)
+[wrangler:info] PUT /api/jobs/1/items/1 200 OK (28ms)
+[wrangler:info] PUT /api/jobs/1/items/1 409 Conflict (16ms)
+[wrangler:info] GET /api/jobs/1 200 OK (25ms)
+[wrangler:info] PUT /api/jobs/1/items/1 200 OK (27ms)
+[wrangler:info] PUT /api/jobs/1/items/2 200 OK (58ms)
+[wrangler:info] GET /api/jobs/1 200 OK (22ms)
+notification queued id=4 type=JOB_COMPLETED recipient=1
+push delivery claimed notification=4 outbox=4
+[wrangler:info] PUT /api/jobs/1/items/1 200 OK (53ms)
+notification queued id=5 type=JOB_REOPENED recipient=1
+push delivery claimed notification=5 outbox=5
+[wrangler:info] PUT /api/jobs/1/items/1 200 OK (53ms)
+[wrangler:info] PUT /api/buyers/1 200 OK (16ms)
+[wrangler:info] GET /api/jobs/1 200 OK (22ms)
+notification queued id=6 type=JOB_CANCELLED recipient=2
+push delivery claimed notification=6 outbox=6
+[wrangler:info] POST /api/jobs/1/cancel 200 OK (49ms)
+[wrangler:info] PUT /api/jobs/1/items/1 422 Unprocessable Entity (16ms)
+[wrangler:info] POST /api/login 204 No Content (148ms)
+[wrangler:info] GET /api/session 200 OK (13ms)
+[wrangler:info] POST /api/accounts 201 Created (154ms)
+[wrangler:info] DELETE /api/accounts/6 200 OK (20ms)
+[wrangler:info] GET /api/buyers 200 OK (21ms)
+[wrangler:info] POST /api/jobs 422 Unprocessable Entity (20ms)
+[wrangler:info] POST /api/login 204 No Content (165ms)
+[wrangler:info] GET /api/session 200 OK (12ms)
+[wrangler:info] POST /api/login 204 No Content (159ms)
+[wrangler:info] GET /api/session 200 OK (13ms)
+[wrangler:info] POST /api/login 204 No Content (179ms)
+[wrangler:info] GET /api/session 200 OK (13ms)
+[wrangler:info] POST /api/products 201 Created (19ms)
+[wrangler:info] GET /api/buyers 200 OK (16ms)
+notification queued id=7 type=ORDER_CONFIRMED recipient=1
+notification queued id=8 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (49ms)
+notification queued id=9 type=ORDER_CONFIRMED recipient=1
+notification queued id=10 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (45ms)
+notification queued id=11 type=ORDER_CONFIRMED recipient=1
+notification queued id=12 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (46ms)
+[wrangler:info] GET /api/quotations 200 OK (17ms)
+[wrangler:info] POST /api/login 204 No Content (150ms)
+[wrangler:info] GET /api/session 200 OK (15ms)
+[wrangler:info] POST /api/accounts 201 Created (153ms)
+[wrangler:info] POST /api/buyers 201 Created (19ms)
+[wrangler:info] POST /api/products 201 Created (20ms)
+[wrangler:info] PUT /api/settings/pdf-header 200 OK (20ms)
+[wrangler:info] POST /api/login 204 No Content (141ms)
+[wrangler:info] GET /api/session 200 OK (13ms)
+[wrangler:info] PUT /api/settings/pdf-header 403 Forbidden (12ms)
+notification queued id=13 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (43ms)
+[wrangler:info] POST /api/quotations 400 Bad Request (17ms)
+notification queued id=14 type=ORDER_CONFIRMED recipient=1
+notification queued id=15 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (47ms)
+notification queued id=16 type=ORDER_CONFIRMED recipient=1
+notification queued id=17 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (43ms)
+[wrangler:info] POST /api/quotations 422 Unprocessable Entity (21ms)
+notification queued id=18 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=19 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=20 type=PRODUCT_PRICE_CHANGED recipient=3
+push delivery claimed notification=18 outbox=18
+push delivery claimed notification=19 outbox=19
+push delivery claimed notification=20 outbox=20
+[wrangler:info] PUT /api/products/2 200 OK (76ms)
+[wrangler:info] POST /api/quotations 200 OK (19ms)
+[wrangler:info] POST /api/quotations 422 Unprocessable Entity (23ms)
+[wrangler:info] POST /api/login 204 No Content (144ms)
+[wrangler:info] GET /api/session 200 OK (12ms)
+[wrangler:info] POST /api/accounts 201 Created (191ms)
+[wrangler:info] POST /api/accounts 201 Created (179ms)
+[wrangler:info] POST /api/login 204 No Content (175ms)
+[wrangler:info] GET /api/session 200 OK (13ms)
+[wrangler:info] POST /api/products 201 Created (21ms)
+notification queued id=21 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=22 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=23 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=24 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=25 type=PRODUCT_PRICE_CHANGED recipient=3
+push delivery claimed notification=21 outbox=21
+push delivery claimed notification=22 outbox=22
+push delivery claimed notification=23 outbox=23
+push delivery claimed notification=24 outbox=24
+push delivery claimed notification=25 outbox=25
+[wrangler:info] PUT /api/products/3 200 OK (115ms)
+[wrangler:info] GET /api/notifications 200 OK (20ms)
+[wrangler:info] PUT /api/notifications/21/read 200 OK (18ms)
+[wrangler:info] POST /api/login 204 No Content (174ms)
+[wrangler:info] GET /api/session 200 OK (18ms)
+[wrangler:info] PUT /api/notifications/21/read 200 OK (18ms)
+[wrangler:info] PUT /api/products/3 200 OK (24ms)
+[wrangler:info] GET /api/notifications 200 OK (25ms)
+[wrangler:info] POST /api/logout 204 No Content (18ms)
+[wrangler:info] GET /api/session 401 Unauthorized (12ms)
+[wrangler:info] POST /api/login 204 No Content (219ms)
+[wrangler:info] GET /api/session 200 OK (36ms)
+notification queued id=26 type=PASSWORD_RESET recipient=8
+[wrangler:info] POST /api/accounts/8/reset-password 200 OK (215ms)
+[wrangler:info] GET /api/session 401 Unauthorized (9ms)
+[wrangler:info] POST /api/login 204 No Content (149ms)
+[wrangler:info] GET /api/session 200 OK (12ms)
+[wrangler:info] POST /api/accounts 201 Created (157ms)
+[wrangler:info] POST /api/login 204 No Content (157ms)
+[wrangler:info] GET /api/session 200 OK (14ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (15ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (15ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (15ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (18ms)
+[wrangler:info] POST /api/test/push-reset 200 OK (16ms)
+[wrangler:info] POST /api/products 201 Created (18ms)
+notification queued id=27 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=28 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=29 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=30 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=31 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=32 type=PRODUCT_PRICE_CHANGED recipient=3
+push delivery claimed notification=27 outbox=27
+push delivery claimed notification=28 outbox=28
+push delivery claimed notification=29 outbox=29
+push delivery claimed notification=30 outbox=30
+push provider accepted notification=30 device=WhFSlmnNIlVX
+push delivery claimed notification=31 outbox=31
+push delivery claimed notification=32 outbox=32
+[wrangler:info] PUT /api/products/4 200 OK (118ms)
+[wrangler:info] GET /api/notifications 200 OK (18ms)
+[wrangler:info] GET /api/test/push-state 200 OK (14ms)
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+[wrangler:info] GET /api/session 401 Unauthorized (23ms)
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+[wrangler:info] GET /api/session 401 Unauthorized (22ms)
+[wrangler:info] POST /api/login 204 No Content (201ms)
+[wrangler:info] GET /api/session 200 OK (15ms)
+[wrangler:info] POST /api/accounts 409 Conflict (251ms)
+[wrangler:info] POST /api/login 204 No Content (157ms)
+[wrangler:info] GET /api/session 200 OK (15ms)
+[wrangler:info] POST /api/accounts 409 Conflict (193ms)
+[wrangler:info] POST /api/login 204 No Content (197ms)
+[wrangler:info] GET /api/session 200 OK (14ms)
+[wrangler:info] POST /api/login 204 No Content (174ms)
+[wrangler:info] GET /api/session 200 OK (14ms)
+[wrangler:info] POST /api/login 204 No Content (181ms)
+[wrangler:info] GET /api/session 200 OK (17ms)
+[wrangler:info] POST /api/products 201 Created (19ms)
+[wrangler:info] GET /api/buyers 200 OK (20ms)
+notification queued id=33 type=ORDER_CONFIRMED recipient=1
+notification queued id=34 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (63ms)
+notification queued id=35 type=ORDER_CONFIRMED recipient=1
+notification queued id=36 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (54ms)
+notification queued id=37 type=ORDER_CONFIRMED recipient=1
+notification queued id=38 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (55ms)
+[wrangler:info] GET /api/quotations 200 OK (34ms)
+[wrangler:info] POST /api/login 204 No Content (161ms)
+[wrangler:info] GET /api/session 200 OK (22ms)
+[wrangler:info] POST /api/accounts 409 Conflict (160ms)
+[wrangler:info] POST /api/login 204 No Content (172ms)
+[wrangler:info] GET /api/session 200 OK (27ms)
+[wrangler:info] POST /api/accounts 409 Conflict (176ms)
+[wrangler:info] POST /api/accounts 409 Conflict (190ms)
+[wrangler:info] POST /api/login 204 No Content (165ms)
+[wrangler:info] GET /api/session 200 OK (16ms)
+[wrangler:info] POST /api/accounts 201 Created (167ms)
+[wrangler:info] POST /api/login 204 No Content (185ms)
+[wrangler:info] GET /api/session 200 OK (24ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (20ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (17ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (16ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (17ms)
+[wrangler:info] POST /api/test/push-reset 200 OK (23ms)
+[wrangler:info] POST /api/products 201 Created (34ms)
+notification queued id=39 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=40 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=41 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=42 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=43 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=44 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=45 type=PRODUCT_PRICE_CHANGED recipient=3
+push delivery claimed notification=39 outbox=39
+push delivery claimed notification=40 outbox=40
+push delivery claimed notification=41 outbox=41
+push delivery claimed notification=42 outbox=42
+push provider accepted notification=42 device=WhFSlmnNIlVX
+push delivery claimed notification=43 outbox=43
+push provider accepted notification=43 device=5AQXsZlxRrt0
+push delivery claimed notification=44 outbox=44
+push delivery claimed notification=45 outbox=45
+[wrangler:info] PUT /api/products/6 200 OK (190ms)
+[wrangler:info] GET /api/notifications 200 OK (18ms)
+[wrangler:info] GET /api/test/push-state 200 OK (29ms)
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+[wrangler:info] GET /api/session 401 Unauthorized (22ms)
+[wrangler:info] POST /api/login 204 No Content (187ms)
+[wrangler:info] GET /api/session 200 OK (17ms)
+[wrangler:info] POST /api/accounts 409 Conflict (213ms)
+[wrangler:info] POST /api/login 204 No Content (225ms)
+[wrangler:info] GET /api/session 200 OK (17ms)
+[wrangler:info] POST /api/accounts 409 Conflict (208ms)
+[wrangler:info] POST /api/login 204 No Content (220ms)
+[wrangler:info] GET /api/session 200 OK (16ms)
+[wrangler:info] POST /api/login 204 No Content (190ms)
+[wrangler:info] GET /api/session 200 OK (16ms)
+[wrangler:info] POST /api/login 204 No Content (185ms)
+[wrangler:info] GET /api/session 200 OK (15ms)
+[wrangler:info] POST /api/products 201 Created (21ms)
+[wrangler:info] GET /api/buyers 200 OK (38ms)
+notification queued id=46 type=ORDER_CONFIRMED recipient=1
+notification queued id=47 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (140ms)
+notification queued id=48 type=ORDER_CONFIRMED recipient=1
+notification queued id=49 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (120ms)
+notification queued id=50 type=ORDER_CONFIRMED recipient=1
+notification queued id=51 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (129ms)
+[wrangler:info] GET /api/quotations 200 OK (38ms)
+[wrangler:info] POST /api/login 204 No Content (174ms)
+[wrangler:info] GET /api/session 200 OK (14ms)
+[wrangler:info] POST /api/accounts 409 Conflict (191ms)
+[wrangler:info] POST /api/login 204 No Content (165ms)
+[wrangler:info] GET /api/session 200 OK (18ms)
+[wrangler:info] POST /api/accounts 409 Conflict (194ms)
+[wrangler:info] POST /api/accounts 409 Conflict (172ms)
+[wrangler:info] POST /api/login 204 No Content (153ms)
+[wrangler:info] GET /api/session 200 OK (13ms)
+[wrangler:info] POST /api/accounts 201 Created (165ms)
+[wrangler:info] POST /api/login 204 No Content (188ms)
+[wrangler:info] GET /api/session 200 OK (14ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (17ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (17ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (15ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (32ms)
+[wrangler:info] POST /api/test/push-reset 200 OK (24ms)
+[wrangler:info] POST /api/products 201 Created (28ms)
+notification queued id=52 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=53 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=54 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=55 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=56 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=57 type=PRODUCT_PRICE_CHANGED recipient=12
+notification queued id=58 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=59 type=PRODUCT_PRICE_CHANGED recipient=3
+push delivery claimed notification=52 outbox=52
+push delivery claimed notification=53 outbox=53
+push delivery claimed notification=54 outbox=54
+push delivery claimed notification=55 outbox=55
+push provider accepted notification=55 device=WhFSlmnNIlVX
+push delivery claimed notification=56 outbox=56
+push provider accepted notification=56 device=5AQXsZlxRrt0
+push delivery claimed notification=57 outbox=57
+push provider accepted notification=57 device=8w9kVgrM5FI3
+push delivery claimed notification=58 outbox=58
+push delivery claimed notification=59 outbox=59
+[wrangler:info] PUT /api/products/8 200 OK (254ms)
+[wrangler:info] GET /api/notifications 200 OK (22ms)
+[wrangler:info] GET /api/test/push-state 200 OK (17ms)
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+[wrangler:info] GET /api/session 401 Unauthorized (23ms)
+[wrangler:info] POST /api/login 204 No Content (169ms)
+[wrangler:info] GET /api/session 200 OK (15ms)
+[wrangler:info] POST /api/accounts 409 Conflict (226ms)
+[wrangler:info] POST /api/login 204 No Content (205ms)
+[wrangler:info] GET /api/session 200 OK (23ms)
+[wrangler:info] POST /api/accounts 409 Conflict (240ms)
+[wrangler:info] POST /api/login 204 No Content (262ms)
+[wrangler:info] GET /api/session 200 OK (28ms)
+[wrangler:info] POST /api/login 204 No Content (194ms)
+[wrangler:info] GET /api/session 200 OK (15ms)
+[wrangler:info] POST /api/login 204 No Content (177ms)
+[wrangler:info] GET /api/session 200 OK (16ms)
+[wrangler:info] POST /api/products 201 Created (34ms)
+[wrangler:info] GET /api/buyers 200 OK (29ms)
+notification queued id=60 type=ORDER_CONFIRMED recipient=1
+notification queued id=61 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (80ms)
+notification queued id=62 type=ORDER_CONFIRMED recipient=1
+notification queued id=63 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (72ms)
+notification queued id=64 type=ORDER_CONFIRMED recipient=1
+notification queued id=65 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (67ms)
+[wrangler:info] GET /api/quotations 200 OK (22ms)
+[wrangler:info] POST /api/login 204 No Content (194ms)
+[wrangler:info] GET /api/session 200 OK (22ms)
+[wrangler:info] POST /api/accounts 409 Conflict (178ms)
+[wrangler:info] POST /api/login 204 No Content (153ms)
+[wrangler:info] GET /api/session 200 OK (16ms)
+[wrangler:info] POST /api/accounts 409 Conflict (169ms)
+[wrangler:info] POST /api/accounts 409 Conflict (199ms)
+[wrangler:info] POST /api/login 204 No Content (168ms)
+[wrangler:info] GET /api/session 200 OK (16ms)
+[wrangler:info] POST /api/accounts 201 Created (203ms)
+[wrangler:info] POST /api/login 204 No Content (174ms)
+[wrangler:info] GET /api/session 200 OK (23ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (19ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (17ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (27ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (30ms)
+[wrangler:info] POST /api/test/push-reset 200 OK (21ms)
+[wrangler:info] POST /api/products 201 Created (27ms)
+notification queued id=66 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=67 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=68 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=69 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=70 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=71 type=PRODUCT_PRICE_CHANGED recipient=12
+notification queued id=72 type=PRODUCT_PRICE_CHANGED recipient=13
+notification queued id=73 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=74 type=PRODUCT_PRICE_CHANGED recipient=3
+push delivery claimed notification=66 outbox=66
+push delivery claimed notification=67 outbox=67
+push delivery claimed notification=68 outbox=68
+push delivery claimed notification=69 outbox=69
+push provider accepted notification=69 device=WhFSlmnNIlVX
+push delivery claimed notification=70 outbox=70
+push provider accepted notification=70 device=5AQXsZlxRrt0
+push delivery claimed notification=71 outbox=71
+push provider accepted notification=71 device=8w9kVgrM5FI3
+push delivery claimed notification=72 outbox=72
+push provider accepted notification=72 device=wcmCdtgAoEZ3
+push delivery claimed notification=73 outbox=73
+push delivery claimed notification=74 outbox=74
+[wrangler:info] PUT /api/products/10 200 OK (368ms)
+[wrangler:info] GET /api/notifications 200 OK (28ms)
+[wrangler:info] GET /api/test/push-state 200 OK (18ms)
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+[wrangler:info] GET /api/session 401 Unauthorized (54ms)
+[wrangler:info] POST /api/login 204 No Content (169ms)
+[wrangler:info] GET /api/session 200 OK (15ms)
+[wrangler:info] POST /api/accounts 409 Conflict (234ms)
+[wrangler:info] POST /api/login 204 No Content (207ms)
+[wrangler:info] GET /api/session 200 OK (16ms)
+[wrangler:info] POST /api/accounts 409 Conflict (183ms)
+[wrangler:info] POST /api/login 204 No Content (184ms)
+[wrangler:info] GET /api/session 200 OK (14ms)
+[wrangler:info] POST /api/login 204 No Content (211ms)
+[wrangler:info] GET /api/session 200 OK (14ms)
+[wrangler:info] POST /api/login 204 No Content (187ms)
+[wrangler:info] GET /api/session 200 OK (23ms)
+[wrangler:info] POST /api/products 201 Created (26ms)
+[wrangler:info] GET /api/buyers 200 OK (41ms)
+notification queued id=75 type=ORDER_CONFIRMED recipient=1
+notification queued id=76 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (120ms)
+notification queued id=77 type=ORDER_CONFIRMED recipient=1
+notification queued id=78 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (101ms)
+notification queued id=79 type=ORDER_CONFIRMED recipient=1
+notification queued id=80 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (96ms)
+[wrangler:info] GET /api/quotations 200 OK (31ms)
+[wrangler:info] POST /api/login 204 No Content (188ms)
+[wrangler:info] GET /api/session 200 OK (17ms)
+[wrangler:info] POST /api/accounts 409 Conflict (199ms)
+[wrangler:info] POST /api/login 204 No Content (196ms)
+[wrangler:info] GET /api/session 200 OK (20ms)
+[wrangler:info] POST /api/accounts 409 Conflict (205ms)
+[wrangler:info] POST /api/accounts 409 Conflict (224ms)
+[wrangler:info] POST /api/login 204 No Content (397ms)
+[wrangler:info] GET /api/session 200 OK (26ms)
+[wrangler:info] POST /api/accounts 201 Created (380ms)
+[wrangler:info] POST /api/login 204 No Content (295ms)
+[wrangler:info] GET /api/session 200 OK (26ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (19ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (19ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (17ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (17ms)
+[wrangler:info] POST /api/test/push-reset 200 OK (19ms)
+[wrangler:info] POST /api/products 201 Created (21ms)
+notification queued id=81 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=82 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=83 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=84 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=85 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=86 type=PRODUCT_PRICE_CHANGED recipient=12
+notification queued id=87 type=PRODUCT_PRICE_CHANGED recipient=13
+notification queued id=88 type=PRODUCT_PRICE_CHANGED recipient=14
+notification queued id=89 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=90 type=PRODUCT_PRICE_CHANGED recipient=3
+push delivery claimed notification=81 outbox=81
+push delivery claimed notification=82 outbox=82
+push delivery claimed notification=83 outbox=83
+push delivery claimed notification=84 outbox=84
+push provider accepted notification=84 device=WhFSlmnNIlVX
+push delivery claimed notification=85 outbox=85
+push provider accepted notification=85 device=5AQXsZlxRrt0
+push delivery claimed notification=86 outbox=86
+push provider accepted notification=86 device=8w9kVgrM5FI3
+push delivery claimed notification=87 outbox=87
+push provider accepted notification=87 device=wcmCdtgAoEZ3
+push delivery claimed notification=88 outbox=88
+push provider accepted notification=88 device=zj3XmD51EPKU
+push delivery claimed notification=89 outbox=89
+push delivery claimed notification=90 outbox=90
+[wrangler:info] PUT /api/products/12 200 OK (430ms)
+[wrangler:info] GET /api/notifications 200 OK (52ms)
+[wrangler:info] GET /api/test/push-state 200 OK (34ms)
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+[wrangler:info] GET /api/session 401 Unauthorized (24ms)
+[wrangler:info] POST /api/login 204 No Content (167ms)
+[wrangler:info] GET /api/session 200 OK (18ms)
+[wrangler:info] POST /api/accounts 409 Conflict (212ms)
+[wrangler:info] POST /api/login 204 No Content (177ms)
+[wrangler:info] GET /api/session 200 OK (15ms)
+[wrangler:info] POST /api/accounts 409 Conflict (173ms)
+[wrangler:info] POST /api/login 204 No Content (175ms)
+[wrangler:info] GET /api/session 200 OK (15ms)
+[wrangler:info] POST /api/login 204 No Content (160ms)
+[wrangler:info] GET /api/session 200 OK (14ms)
+[wrangler:info] POST /api/login 204 No Content (206ms)
+[wrangler:info] GET /api/session 200 OK (30ms)
+[wrangler:info] POST /api/products 201 Created (40ms)
+[wrangler:info] GET /api/buyers 200 OK (35ms)
+notification queued id=91 type=ORDER_CONFIRMED recipient=1
+notification queued id=92 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (119ms)
+notification queued id=93 type=ORDER_CONFIRMED recipient=1
+notification queued id=94 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (102ms)
+notification queued id=95 type=ORDER_CONFIRMED recipient=1
+notification queued id=96 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (95ms)
+[wrangler:info] GET /api/quotations 200 OK (32ms)
+[wrangler:info] POST /api/login 204 No Content (169ms)
+[wrangler:info] GET /api/session 200 OK (15ms)
+[wrangler:info] POST /api/accounts 409 Conflict (162ms)
+[wrangler:info] POST /api/login 204 No Content (167ms)
+[wrangler:info] GET /api/session 200 OK (26ms)
+[wrangler:info] POST /api/accounts 409 Conflict (206ms)
+[wrangler:info] POST /api/accounts 409 Conflict (180ms)
+[wrangler:info] POST /api/login 204 No Content (194ms)
+[wrangler:info] GET /api/session 200 OK (16ms)
+[wrangler:info] POST /api/accounts 201 Created (181ms)
+[wrangler:info] POST /api/login 204 No Content (188ms)
+[wrangler:info] GET /api/session 200 OK (22ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (19ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (24ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (21ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (20ms)
+[wrangler:info] POST /api/test/push-reset 200 OK (18ms)
+[wrangler:info] POST /api/products 201 Created (19ms)
+notification queued id=97 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=98 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=99 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=100 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=101 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=102 type=PRODUCT_PRICE_CHANGED recipient=12
+notification queued id=103 type=PRODUCT_PRICE_CHANGED recipient=13
+notification queued id=104 type=PRODUCT_PRICE_CHANGED recipient=14
+notification queued id=105 type=PRODUCT_PRICE_CHANGED recipient=15
+notification queued id=106 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=107 type=PRODUCT_PRICE_CHANGED recipient=3
+push delivery claimed notification=97 outbox=97
+push delivery claimed notification=98 outbox=98
+push delivery claimed notification=99 outbox=99
+push delivery claimed notification=100 outbox=100
+push provider accepted notification=100 device=WhFSlmnNIlVX
+push delivery claimed notification=101 outbox=101
+push provider accepted notification=101 device=5AQXsZlxRrt0
+push delivery claimed notification=102 outbox=102
+push provider accepted notification=102 device=8w9kVgrM5FI3
+push delivery claimed notification=103 outbox=103
+push provider accepted notification=103 device=wcmCdtgAoEZ3
+push delivery claimed notification=104 outbox=104
+push provider accepted notification=104 device=zj3XmD51EPKU
+push delivery claimed notification=105 outbox=105
+push provider accepted notification=105 device=sLr-j71u650j
+push delivery claimed notification=106 outbox=106
+[wrangler:info] PUT /api/products/14 200 OK (327ms)
+[wrangler:info] GET /api/notifications 200 OK (35ms)
+[wrangler:info] GET /api/test/push-state 200 OK (26ms)
+⎔ Reloading local server...
+memory allocation of 524288 bytes failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+[wrangler:info] GET /api/session 401 Unauthorized (48ms)
+[wrangler:info] POST /api/login 204 No Content (463ms)
+[wrangler:info] GET /api/session 200 OK (38ms)
+[wrangler:info] POST /api/accounts 409 Conflict (624ms)
+[wrangler:info] POST /api/login 204 No Content (482ms)
+[wrangler:info] GET /api/session 200 OK (35ms)
+[wrangler:info] POST /api/accounts 409 Conflict (499ms)
+[wrangler:info] POST /api/login 204 No Content (452ms)
+[wrangler:info] GET /api/session 200 OK (34ms)
+[wrangler:info] POST /api/login 204 No Content (460ms)
+[wrangler:info] GET /api/session 200 OK (39ms)
+[wrangler:info] POST /api/login 204 No Content (422ms)
+[wrangler:info] GET /api/session 200 OK (33ms)
+[wrangler:info] POST /api/products 201 Created (37ms)
+[wrangler:info] GET /api/buyers 200 OK (39ms)
+notification queued id=108 type=ORDER_CONFIRMED recipient=1
+notification queued id=109 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (123ms)
+notification queued id=110 type=ORDER_CONFIRMED recipient=1
+notification queued id=111 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (117ms)
+notification queued id=112 type=ORDER_CONFIRMED recipient=1
+notification queued id=113 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (107ms)
+[wrangler:info] GET /api/quotations 200 OK (38ms)
+[wrangler:info] POST /api/login 204 No Content (400ms)
+[wrangler:info] GET /api/session 200 OK (28ms)
+[wrangler:info] POST /api/accounts 409 Conflict (407ms)
+[wrangler:info] POST /api/login 204 No Content (397ms)
+[wrangler:info] GET /api/session 200 OK (29ms)
+[wrangler:info] POST /api/accounts 409 Conflict (412ms)
+[wrangler:info] POST /api/accounts 409 Conflict (408ms)
+[wrangler:info] POST /api/login 204 No Content (392ms)
+[wrangler:info] GET /api/session 200 OK (30ms)
+[wrangler:info] POST /api/accounts 201 Created (452ms)
+[wrangler:info] POST /api/login 204 No Content (452ms)
+[wrangler:info] GET /api/session 200 OK (35ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (40ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (38ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (38ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (36ms)
+[wrangler:info] POST /api/test/push-reset 200 OK (34ms)
+[wrangler:info] POST /api/products 201 Created (41ms)
+notification queued id=114 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=115 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=116 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=117 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=118 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=119 type=PRODUCT_PRICE_CHANGED recipient=12
+notification queued id=120 type=PRODUCT_PRICE_CHANGED recipient=13
+notification queued id=121 type=PRODUCT_PRICE_CHANGED recipient=14
+notification queued id=122 type=PRODUCT_PRICE_CHANGED recipient=15
+notification queued id=123 type=PRODUCT_PRICE_CHANGED recipient=16
+notification queued id=124 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=125 type=PRODUCT_PRICE_CHANGED recipient=3
+push delivery claimed notification=114 outbox=114
+push delivery claimed notification=115 outbox=115
+push delivery claimed notification=116 outbox=116
+push delivery claimed notification=117 outbox=117
+push provider accepted notification=117 device=WhFSlmnNIlVX
+push delivery claimed notification=118 outbox=118
+push provider accepted notification=118 device=5AQXsZlxRrt0
+push delivery claimed notification=119 outbox=119
+push provider accepted notification=119 device=8w9kVgrM5FI3
+push delivery claimed notification=120 outbox=120
+push provider accepted notification=120 device=wcmCdtgAoEZ3
+push delivery claimed notification=121 outbox=121
+push provider accepted notification=121 device=zj3XmD51EPKU
+push delivery claimed notification=122 outbox=122
+push provider accepted notification=122 device=sLr-j71u650j
+push delivery claimed notification=123 outbox=123
+push provider accepted notification=123 device=IFVcFIf71JM6
+[wrangler:info] PUT /api/products/16 200 OK (582ms)
+[wrangler:info] GET /api/notifications 200 OK (36ms)
+[wrangler:info] GET /api/test/push-state 200 OK (30ms)
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+[wrangler:info] GET /api/session 401 Unauthorized (25ms)
+[wrangler:info] POST /api/login 204 No Content (196ms)
+[wrangler:info] GET /api/session 200 OK (17ms)
+[wrangler:info] POST /api/accounts 409 Conflict (221ms)
+[wrangler:info] POST /api/login 204 No Content (186ms)
+[wrangler:info] GET /api/session 200 OK (17ms)
+[wrangler:info] POST /api/accounts 409 Conflict (262ms)
+[wrangler:info] POST /api/login 204 No Content (174ms)
+[wrangler:info] GET /api/session 200 OK (15ms)
+[wrangler:info] POST /api/login 204 No Content (167ms)
+[wrangler:info] GET /api/session 200 OK (16ms)
+[wrangler:info] POST /api/login 204 No Content (163ms)
+[wrangler:info] GET /api/session 200 OK (14ms)
+[wrangler:info] POST /api/products 201 Created (21ms)
+[wrangler:info] GET /api/buyers 200 OK (40ms)
+notification queued id=126 type=ORDER_CONFIRMED recipient=1
+notification queued id=127 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (101ms)
+notification queued id=128 type=ORDER_CONFIRMED recipient=1
+notification queued id=129 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (63ms)
+notification queued id=130 type=ORDER_CONFIRMED recipient=1
+notification queued id=131 type=ORDER_CONFIRMED recipient=4
+[wrangler:info] POST /api/quotations 201 Created (77ms)
+[wrangler:info] GET /api/quotations 200 OK (26ms)
+[wrangler:info] POST /api/login 204 No Content (169ms)
+[wrangler:info] GET /api/session 200 OK (15ms)
+[wrangler:info] POST /api/accounts 409 Conflict (202ms)
+[wrangler:info] POST /api/login 204 No Content (158ms)
+[wrangler:info] GET /api/session 200 OK (14ms)
+[wrangler:info] POST /api/accounts 409 Conflict (179ms)
+[wrangler:info] POST /api/accounts 409 Conflict (213ms)
+[wrangler:info] POST /api/login 204 No Content (179ms)
+[wrangler:info] GET /api/session 200 OK (15ms)
+[wrangler:info] POST /api/accounts 201 Created (185ms)
+[wrangler:info] POST /api/login 204 No Content (197ms)
+[wrangler:info] GET /api/session 200 OK (14ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (20ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (18ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (16ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (34ms)
+[wrangler:info] POST /api/test/push-reset 200 OK (18ms)
+[wrangler:info] POST /api/products 201 Created (37ms)
+notification queued id=132 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=133 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=134 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=135 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=136 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=137 type=PRODUCT_PRICE_CHANGED recipient=12
+notification queued id=138 type=PRODUCT_PRICE_CHANGED recipient=13
+notification queued id=139 type=PRODUCT_PRICE_CHANGED recipient=14
+notification queued id=140 type=PRODUCT_PRICE_CHANGED recipient=15
+notification queued id=141 type=PRODUCT_PRICE_CHANGED recipient=16
+notification queued id=142 type=PRODUCT_PRICE_CHANGED recipient=17
+notification queued id=143 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=144 type=PRODUCT_PRICE_CHANGED recipient=3
+push delivery claimed notification=132 outbox=132
+push delivery claimed notification=133 outbox=133
+push delivery claimed notification=134 outbox=134
+push delivery claimed notification=135 outbox=135
+push provider accepted notification=135 device=WhFSlmnNIlVX
+push delivery claimed notification=136 outbox=136
+push provider accepted notification=136 device=5AQXsZlxRrt0
+push delivery claimed notification=137 outbox=137
+push provider accepted notification=137 device=8w9kVgrM5FI3
+push delivery claimed notification=138 outbox=138
+push provider accepted notification=138 device=wcmCdtgAoEZ3
+push delivery claimed notification=139 outbox=139
+push provider accepted notification=139 device=zj3XmD51EPKU
+push delivery claimed notification=140 outbox=140
+push provider accepted notification=140 device=sLr-j71u650j
+push delivery claimed notification=141 outbox=141
+push provider accepted notification=141 device=IFVcFIf71JM6
+[wrangler:info] PUT /api/products/18 200 OK (282ms)
+[wrangler:info] GET /api/notifications 200 OK (18ms)
+[wrangler:info] GET /api/test/push-state 200 OK (22ms)
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+[wrangler:info] GET /api/session 401 Unauthorized (23ms)
+[wrangler:info] POST /api/login 204 No Content (188ms)
+[wrangler:info] GET /api/session 200 OK (16ms)
+[wrangler:info] POST /api/accounts 409 Conflict (205ms)
+[wrangler:info] POST /api/login 204 No Content (188ms)
+[wrangler:info] GET /api/session 200 OK (18ms)
+[wrangler:info] POST /api/accounts 409 Conflict (212ms)
+[wrangler:info] POST /api/login 204 No Content (150ms)
+[wrangler:info] GET /api/session 200 OK (14ms)
+[wrangler:info] POST /api/accounts 409 Conflict (177ms)
+[wrangler:info] POST /api/login 204 No Content (166ms)
+[wrangler:info] GET /api/session 200 OK (16ms)
+[wrangler:info] POST /api/accounts 409 Conflict (194ms)
+[wrangler:info] POST /api/accounts 409 Conflict (192ms)
+[wrangler:info] POST /api/login 204 No Content (151ms)
+[wrangler:info] GET /api/session 200 OK (13ms)
+[wrangler:info] POST /api/accounts 201 Created (177ms)
+[wrangler:info] POST /api/login 204 No Content (153ms)
+[wrangler:info] GET /api/session 200 OK (14ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (17ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (15ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (23ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (33ms)
+[wrangler:info] POST /api/test/push-reset 200 OK (28ms)
+[wrangler:info] POST /api/products 201 Created (44ms)
+notification queued id=145 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=146 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=147 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=148 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=149 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=150 type=PRODUCT_PRICE_CHANGED recipient=12
+notification queued id=151 type=PRODUCT_PRICE_CHANGED recipient=13
+notification queued id=152 type=PRODUCT_PRICE_CHANGED recipient=14
+notification queued id=153 type=PRODUCT_PRICE_CHANGED recipient=15
+notification queued id=154 type=PRODUCT_PRICE_CHANGED recipient=16
+notification queued id=155 type=PRODUCT_PRICE_CHANGED recipient=17
+notification queued id=156 type=PRODUCT_PRICE_CHANGED recipient=18
+notification queued id=157 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=158 type=PRODUCT_PRICE_CHANGED recipient=3
+push delivery claimed notification=145 outbox=145
+push delivery claimed notification=146 outbox=146
+push delivery claimed notification=147 outbox=147
+push delivery claimed notification=148 outbox=148
+push provider accepted notification=148 device=WhFSlmnNIlVX
+push delivery claimed notification=149 outbox=149
+push provider accepted notification=149 device=5AQXsZlxRrt0
+push delivery claimed notification=150 outbox=150
+push provider accepted notification=150 device=8w9kVgrM5FI3
+push delivery claimed notification=151 outbox=151
+push provider accepted notification=151 device=wcmCdtgAoEZ3
+push delivery claimed notification=152 outbox=152
+push provider accepted notification=152 device=zj3XmD51EPKU
+push delivery claimed notification=153 outbox=153
+push provider accepted notification=153 device=sLr-j71u650j
+push delivery claimed notification=154 outbox=154
+push provider accepted notification=154 device=IFVcFIf71JM6
+[wrangler:info] PUT /api/products/19 200 OK (308ms)
+[wrangler:info] GET /api/notifications 200 OK (19ms)
+[wrangler:info] GET /api/test/push-state 200 OK (28ms)
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+[wrangler:info] GET /api/session 401 Unauthorized (27ms)
+[wrangler:info] POST /api/login 204 No Content (193ms)
+[wrangler:info] GET /api/session 200 OK (16ms)
+[wrangler:info] POST /api/accounts 201 Created (230ms)
+[wrangler:info] POST /api/accounts 201 Created (187ms)
+[wrangler:info] POST /api/accounts 201 Created (213ms)
+[wrangler:info] POST /api/accounts 201 Created (192ms)
+[wrangler:info] PUT /api/accounts/22 200 OK (27ms)
+[wrangler:info] POST /api/buyers 201 Created (25ms)
+[wrangler:info] POST /api/buyers 201 Created (21ms)
+[wrangler:info] POST /api/buyers 201 Created (29ms)
+[wrangler:info] GET /api/jobs/buyer-preview 200 OK (23ms)
+[wrangler:info] POST /api/login 204 No Content (231ms)
+[wrangler:info] GET /api/session 200 OK (19ms)
+[wrangler:info] POST /api/accounts 201 Created (353ms)
+[wrangler:info] DELETE /api/accounts/23 200 OK (46ms)
+[wrangler:info] POST /api/buyers 201 Created (38ms)
+[wrangler:info] POST /api/jobs 422 Unprocessable Entity (46ms)
+[wrangler:info] POST /api/login 204 No Content (345ms)
+[wrangler:info] GET /api/session 200 OK (15ms)
+[wrangler:info] POST /api/accounts 409 Conflict (429ms)
+[wrangler:info] POST /api/login 204 No Content (331ms)
+[wrangler:info] GET /api/session 200 OK (28ms)
+[wrangler:info] POST /api/accounts 201 Created (370ms)
+[wrangler:info] POST /api/buyers 201 Created (29ms)
+[wrangler:info] POST /api/products 201 Created (29ms)
+[wrangler:info] PUT /api/settings/pdf-header 200 OK (22ms)
+[wrangler:info] POST /api/login 204 No Content (411ms)
+[wrangler:info] GET /api/session 200 OK (28ms)
+[wrangler:info] PUT /api/settings/pdf-header 403 Forbidden (29ms)
+notification queued id=159 type=ORDER_CONFIRMED recipient=4
+notification queued id=160 type=ORDER_CONFIRMED recipient=21
+[wrangler:info] POST /api/quotations 201 Created (111ms)
+[wrangler:info] POST /api/quotations 400 Bad Request (29ms)
+notification queued id=161 type=ORDER_CONFIRMED recipient=1
+notification queued id=162 type=ORDER_CONFIRMED recipient=4
+notification queued id=163 type=ORDER_CONFIRMED recipient=21
+[wrangler:info] POST /api/quotations 201 Created (100ms)
+notification queued id=164 type=ORDER_CONFIRMED recipient=1
+notification queued id=165 type=ORDER_CONFIRMED recipient=4
+notification queued id=166 type=ORDER_CONFIRMED recipient=21
+[wrangler:info] POST /api/quotations 201 Created (90ms)
+[wrangler:info] POST /api/quotations 422 Unprocessable Entity (44ms)
+notification queued id=167 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=168 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=169 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=170 type=PRODUCT_PRICE_CHANGED recipient=24
+notification queued id=171 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=172 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=173 type=PRODUCT_PRICE_CHANGED recipient=12
+notification queued id=174 type=PRODUCT_PRICE_CHANGED recipient=13
+notification queued id=175 type=PRODUCT_PRICE_CHANGED recipient=14
+notification queued id=176 type=PRODUCT_PRICE_CHANGED recipient=15
+notification queued id=177 type=PRODUCT_PRICE_CHANGED recipient=16
+notification queued id=178 type=PRODUCT_PRICE_CHANGED recipient=17
+notification queued id=179 type=PRODUCT_PRICE_CHANGED recipient=18
+notification queued id=180 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=181 type=PRODUCT_PRICE_CHANGED recipient=19
+notification queued id=182 type=PRODUCT_PRICE_CHANGED recipient=3
+notification queued id=183 type=PRODUCT_PRICE_CHANGED recipient=20
+push delivery claimed notification=167 outbox=167
+push delivery claimed notification=168 outbox=168
+push delivery claimed notification=169 outbox=169
+push delivery claimed notification=170 outbox=170
+push delivery claimed notification=171 outbox=171
+push provider accepted notification=171 device=WhFSlmnNIlVX
+push delivery claimed notification=172 outbox=172
+push provider accepted notification=172 device=5AQXsZlxRrt0
+push delivery claimed notification=173 outbox=173
+push provider accepted notification=173 device=8w9kVgrM5FI3
+push delivery claimed notification=174 outbox=174
+push provider accepted notification=174 device=wcmCdtgAoEZ3
+push delivery claimed notification=175 outbox=175
+push provider accepted notification=175 device=zj3XmD51EPKU
+push delivery claimed notification=176 outbox=176
+push provider accepted notification=176 device=sLr-j71u650j
+[wrangler:info] PUT /api/products/20 200 OK (538ms)
+[wrangler:info] POST /api/quotations 200 OK (39ms)
+[wrangler:info] POST /api/quotations 422 Unprocessable Entity (43ms)
+[wrangler:info] POST /api/login 204 No Content (351ms)
+[wrangler:info] GET /api/session 200 OK (19ms)
+[wrangler:info] POST /api/accounts 201 Created (357ms)
+[wrangler:info] POST /api/accounts 201 Created (377ms)
+[wrangler:info] POST /api/login 204 No Content (328ms)
+[wrangler:info] GET /api/session 200 OK (25ms)
+[wrangler:info] POST /api/products 201 Created (36ms)
+notification queued id=184 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=185 type=PRODUCT_PRICE_CHANGED recipient=25
+notification queued id=186 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=187 type=PRODUCT_PRICE_CHANGED recipient=26
+notification queued id=188 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=189 type=PRODUCT_PRICE_CHANGED recipient=24
+notification queued id=190 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=191 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=192 type=PRODUCT_PRICE_CHANGED recipient=12
+notification queued id=193 type=PRODUCT_PRICE_CHANGED recipient=13
+notification queued id=194 type=PRODUCT_PRICE_CHANGED recipient=14
+notification queued id=195 type=PRODUCT_PRICE_CHANGED recipient=15
+notification queued id=196 type=PRODUCT_PRICE_CHANGED recipient=16
+notification queued id=197 type=PRODUCT_PRICE_CHANGED recipient=17
+notification queued id=198 type=PRODUCT_PRICE_CHANGED recipient=18
+notification queued id=199 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=200 type=PRODUCT_PRICE_CHANGED recipient=19
+notification queued id=201 type=PRODUCT_PRICE_CHANGED recipient=3
+notification queued id=202 type=PRODUCT_PRICE_CHANGED recipient=20
+push delivery claimed notification=184 outbox=184
+push delivery claimed notification=185 outbox=185
+push delivery claimed notification=186 outbox=186
+push delivery claimed notification=187 outbox=187
+push delivery claimed notification=188 outbox=188
+push delivery claimed notification=189 outbox=189
+push delivery claimed notification=190 outbox=190
+push provider accepted notification=190 device=WhFSlmnNIlVX
+push provider accepted notification=190 device=sHt4MtjL4lDw
+push delivery claimed notification=191 outbox=191
+push provider accepted notification=191 device=5AQXsZlxRrt0
+push provider accepted notification=191 device=EvokxTnVpM2S
+push delivery claimed notification=192 outbox=192
+push provider accepted notification=192 device=8w9kVgrM5FI3
+push provider accepted notification=192 device=WkjpcsJeY94v
+push delivery claimed notification=193 outbox=193
+push provider accepted notification=193 device=wcmCdtgAoEZ3
+push provider accepted notification=193 device=tF-kz9_TTOnY
+[wrangler:info] PUT /api/products/21 200 OK (329ms)
+[wrangler:info] GET /api/notifications 200 OK (18ms)
+[wrangler:info] PUT /api/notifications/185/read 200 OK (19ms)
+[wrangler:info] POST /api/login 204 No Content (393ms)
+[wrangler:info] GET /api/session 200 OK (29ms)
+[wrangler:info] PUT /api/notifications/185/read 200 OK (21ms)
+[wrangler:info] PUT /api/products/21 200 OK (27ms)
+[wrangler:info] GET /api/notifications 200 OK (28ms)
+[wrangler:info] POST /api/logout 204 No Content (25ms)
+[wrangler:info] GET /api/session 401 Unauthorized (14ms)
+[wrangler:info] POST /api/login 204 No Content (370ms)
+[wrangler:info] GET /api/session 200 OK (27ms)
+notification queued id=203 type=PASSWORD_RESET recipient=25
+[wrangler:info] POST /api/accounts/25/reset-password 200 OK (403ms)
+[wrangler:info] GET /api/session 401 Unauthorized (21ms)
+[wrangler:info] POST /api/login 204 No Content (332ms)
+[wrangler:info] GET /api/session 200 OK (22ms)
+[wrangler:info] POST /api/accounts 201 Created (388ms)
+[wrangler:info] POST /api/login 204 No Content (387ms)
+[wrangler:info] GET /api/session 200 OK (27ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (17ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (18ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (16ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (30ms)
+[wrangler:info] POST /api/test/push-reset 200 OK (25ms)
+[wrangler:info] POST /api/products 201 Created (32ms)
+notification queued id=204 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=205 type=PRODUCT_PRICE_CHANGED recipient=25
+notification queued id=206 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=207 type=PRODUCT_PRICE_CHANGED recipient=26
+notification queued id=208 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=209 type=PRODUCT_PRICE_CHANGED recipient=24
+notification queued id=210 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=211 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=212 type=PRODUCT_PRICE_CHANGED recipient=12
+notification queued id=213 type=PRODUCT_PRICE_CHANGED recipient=13
+notification queued id=214 type=PRODUCT_PRICE_CHANGED recipient=14
+notification queued id=215 type=PRODUCT_PRICE_CHANGED recipient=15
+notification queued id=216 type=PRODUCT_PRICE_CHANGED recipient=16
+notification queued id=217 type=PRODUCT_PRICE_CHANGED recipient=17
+notification queued id=218 type=PRODUCT_PRICE_CHANGED recipient=18
+notification queued id=219 type=PRODUCT_PRICE_CHANGED recipient=27
+notification queued id=220 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=221 type=PRODUCT_PRICE_CHANGED recipient=19
+notification queued id=222 type=PRODUCT_PRICE_CHANGED recipient=3
+notification queued id=223 type=PRODUCT_PRICE_CHANGED recipient=20
+push delivery claimed notification=204 outbox=204
+push delivery claimed notification=205 outbox=205
+push delivery claimed notification=206 outbox=206
+push delivery claimed notification=207 outbox=207
+push delivery claimed notification=208 outbox=208
+push delivery claimed notification=209 outbox=209
+push delivery claimed notification=210 outbox=210
+push provider accepted notification=210 device=WhFSlmnNIlVX
+push delivery claimed notification=211 outbox=211
+push provider accepted notification=211 device=5AQXsZlxRrt0
+push delivery claimed notification=212 outbox=212
+push provider accepted notification=212 device=8w9kVgrM5FI3
+push delivery claimed notification=213 outbox=213
+push provider accepted notification=213 device=wcmCdtgAoEZ3
+[wrangler:info] PUT /api/products/22 200 OK (290ms)
+[wrangler:info] GET /api/notifications 200 OK (18ms)
+[wrangler:info] GET /api/test/push-state 200 OK (22ms)
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+[wrangler:info] GET /api/session 401 Unauthorized (22ms)
+[wrangler:info] POST /api/login 204 No Content (208ms)
+[wrangler:info] GET /api/session 200 OK (18ms)
+[wrangler:info] POST /api/accounts 201 Created (217ms)
+[wrangler:info] POST /api/accounts 201 Created (200ms)
+[wrangler:info] POST /api/accounts 201 Created (212ms)
+[wrangler:info] POST /api/accounts 201 Created (192ms)
+[wrangler:info] PUT /api/accounts/31 200 OK (32ms)
+[wrangler:info] POST /api/buyers 201 Created (22ms)
+[wrangler:info] POST /api/buyers 201 Created (20ms)
+[wrangler:info] POST /api/buyers 201 Created (30ms)
+[wrangler:info] GET /api/jobs/buyer-preview 200 OK (21ms)
+[wrangler:info] POST /api/login 204 No Content (182ms)
+[wrangler:info] GET /api/session 200 OK (14ms)
+[wrangler:info] POST /api/accounts 201 Created (220ms)
+[wrangler:info] DELETE /api/accounts/32 200 OK (23ms)
+[wrangler:info] POST /api/buyers 201 Created (21ms)
+[wrangler:info] POST /api/jobs 422 Unprocessable Entity (25ms)
+[wrangler:info] POST /api/login 204 No Content (321ms)
+[wrangler:info] GET /api/session 200 OK (27ms)
+[wrangler:info] POST /api/accounts 201 Created (360ms)
+[wrangler:info] POST /api/accounts 201 Created (348ms)
+[wrangler:info] POST /api/login 204 No Content (305ms)
+[wrangler:info] GET /api/session 200 OK (25ms)
+[wrangler:info] POST /api/login 204 No Content (356ms)
+[wrangler:info] GET /api/session 200 OK (26ms)
+[wrangler:info] POST /api/products 201 Created (26ms)
+[wrangler:info] POST /api/buyers 201 Created (34ms)
+notification queued id=224 type=ORDER_CONFIRMED recipient=1
+notification queued id=225 type=ORDER_CONFIRMED recipient=4
+notification queued id=226 type=ORDER_CONFIRMED recipient=21
+notification queued id=227 type=ORDER_CONFIRMED recipient=30
+[wrangler:info] POST /api/quotations 201 Created (107ms)
+notification queued id=228 type=ORDER_CONFIRMED recipient=1
+notification queued id=229 type=ORDER_CONFIRMED recipient=4
+notification queued id=230 type=ORDER_CONFIRMED recipient=21
+notification queued id=231 type=ORDER_CONFIRMED recipient=30
+[wrangler:info] POST /api/quotations 201 Created (86ms)
+notification queued id=232 type=ORDER_CONFIRMED recipient=1
+notification queued id=233 type=ORDER_CONFIRMED recipient=4
+notification queued id=234 type=ORDER_CONFIRMED recipient=21
+notification queued id=235 type=ORDER_CONFIRMED recipient=30
+[wrangler:info] POST /api/quotations 201 Created (96ms)
+[wrangler:info] GET /api/quotations 200 OK (18ms)
+[wrangler:info] POST /api/login 204 No Content (336ms)
+[wrangler:info] GET /api/session 200 OK (24ms)
+[wrangler:info] POST /api/accounts 201 Created (344ms)
+[wrangler:info] POST /api/buyers 201 Created (34ms)
+[wrangler:info] POST /api/products 201 Created (22ms)
+[wrangler:info] PUT /api/settings/pdf-header 200 OK (19ms)
+[wrangler:info] POST /api/login 204 No Content (329ms)
+[wrangler:info] GET /api/session 200 OK (20ms)
+[wrangler:info] PUT /api/settings/pdf-header 403 Forbidden (19ms)
+notification queued id=236 type=ORDER_CONFIRMED recipient=4
+notification queued id=237 type=ORDER_CONFIRMED recipient=21
+notification queued id=238 type=ORDER_CONFIRMED recipient=30
+[wrangler:info] POST /api/quotations 201 Created (84ms)
+[wrangler:info] POST /api/quotations 400 Bad Request (30ms)
+notification queued id=239 type=ORDER_CONFIRMED recipient=1
+notification queued id=240 type=ORDER_CONFIRMED recipient=4
+notification queued id=241 type=ORDER_CONFIRMED recipient=21
+notification queued id=242 type=ORDER_CONFIRMED recipient=30
+[wrangler:info] POST /api/quotations 201 Created (102ms)
+notification queued id=243 type=ORDER_CONFIRMED recipient=1
+notification queued id=244 type=ORDER_CONFIRMED recipient=4
+notification queued id=245 type=ORDER_CONFIRMED recipient=21
+notification queued id=246 type=ORDER_CONFIRMED recipient=30
+[wrangler:info] POST /api/quotations 201 Created (65ms)
+[wrangler:info] POST /api/quotations 422 Unprocessable Entity (22ms)
+notification queued id=247 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=248 type=PRODUCT_PRICE_CHANGED recipient=25
+notification queued id=249 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=250 type=PRODUCT_PRICE_CHANGED recipient=26
+notification queued id=251 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=252 type=PRODUCT_PRICE_CHANGED recipient=24
+notification queued id=253 type=PRODUCT_PRICE_CHANGED recipient=35
+notification queued id=254 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=255 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=256 type=PRODUCT_PRICE_CHANGED recipient=12
+notification queued id=257 type=PRODUCT_PRICE_CHANGED recipient=13
+notification queued id=258 type=PRODUCT_PRICE_CHANGED recipient=14
+notification queued id=259 type=PRODUCT_PRICE_CHANGED recipient=15
+notification queued id=260 type=PRODUCT_PRICE_CHANGED recipient=16
+notification queued id=261 type=PRODUCT_PRICE_CHANGED recipient=17
+notification queued id=262 type=PRODUCT_PRICE_CHANGED recipient=18
+notification queued id=263 type=PRODUCT_PRICE_CHANGED recipient=27
+notification queued id=264 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=265 type=PRODUCT_PRICE_CHANGED recipient=19
+notification queued id=266 type=PRODUCT_PRICE_CHANGED recipient=33
+notification queued id=267 type=PRODUCT_PRICE_CHANGED recipient=28
+notification queued id=268 type=PRODUCT_PRICE_CHANGED recipient=3
+notification queued id=269 type=PRODUCT_PRICE_CHANGED recipient=20
+notification queued id=270 type=PRODUCT_PRICE_CHANGED recipient=34
+notification queued id=271 type=PRODUCT_PRICE_CHANGED recipient=29
+push delivery claimed notification=247 outbox=247
+push delivery claimed notification=248 outbox=248
+push delivery claimed notification=249 outbox=249
+push delivery claimed notification=250 outbox=250
+push delivery claimed notification=251 outbox=251
+push delivery claimed notification=252 outbox=252
+push delivery claimed notification=253 outbox=253
+push delivery claimed notification=254 outbox=254
+push provider accepted notification=254 device=WhFSlmnNIlVX
+push delivery claimed notification=255 outbox=255
+push provider accepted notification=255 device=5AQXsZlxRrt0
+push delivery claimed notification=256 outbox=256
+push provider accepted notification=256 device=8w9kVgrM5FI3
+[wrangler:info] PUT /api/products/24 200 OK (418ms)
+[wrangler:info] POST /api/quotations 200 OK (27ms)
+[wrangler:info] POST /api/quotations 422 Unprocessable Entity (45ms)
+[wrangler:info] POST /api/login 204 No Content (337ms)
+[wrangler:info] GET /api/session 200 OK (27ms)
+[wrangler:info] POST /api/accounts 201 Created (253ms)
+[wrangler:info] POST /api/accounts 201 Created (218ms)
+[wrangler:info] POST /api/login 204 No Content (202ms)
+[wrangler:info] GET /api/session 200 OK (18ms)
+[wrangler:info] POST /api/products 201 Created (20ms)
+notification queued id=272 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=273 type=PRODUCT_PRICE_CHANGED recipient=25
+notification queued id=274 type=PRODUCT_PRICE_CHANGED recipient=36
+notification queued id=275 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=276 type=PRODUCT_PRICE_CHANGED recipient=26
+notification queued id=277 type=PRODUCT_PRICE_CHANGED recipient=37
+notification queued id=278 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=279 type=PRODUCT_PRICE_CHANGED recipient=24
+notification queued id=280 type=PRODUCT_PRICE_CHANGED recipient=35
+notification queued id=281 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=282 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=283 type=PRODUCT_PRICE_CHANGED recipient=12
+notification queued id=284 type=PRODUCT_PRICE_CHANGED recipient=13
+notification queued id=285 type=PRODUCT_PRICE_CHANGED recipient=14
+notification queued id=286 type=PRODUCT_PRICE_CHANGED recipient=15
+notification queued id=287 type=PRODUCT_PRICE_CHANGED recipient=16
+notification queued id=288 type=PRODUCT_PRICE_CHANGED recipient=17
+notification queued id=289 type=PRODUCT_PRICE_CHANGED recipient=18
+notification queued id=290 type=PRODUCT_PRICE_CHANGED recipient=27
+notification queued id=291 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=292 type=PRODUCT_PRICE_CHANGED recipient=19
+notification queued id=293 type=PRODUCT_PRICE_CHANGED recipient=33
+notification queued id=294 type=PRODUCT_PRICE_CHANGED recipient=28
+notification queued id=295 type=PRODUCT_PRICE_CHANGED recipient=3
+notification queued id=296 type=PRODUCT_PRICE_CHANGED recipient=20
+notification queued id=297 type=PRODUCT_PRICE_CHANGED recipient=34
+notification queued id=298 type=PRODUCT_PRICE_CHANGED recipient=29
+push delivery claimed notification=272 outbox=272
+push delivery claimed notification=273 outbox=273
+push delivery claimed notification=274 outbox=274
+push delivery claimed notification=275 outbox=275
+push delivery claimed notification=276 outbox=276
+push delivery claimed notification=277 outbox=277
+push delivery claimed notification=278 outbox=278
+push delivery claimed notification=279 outbox=279
+push delivery claimed notification=280 outbox=280
+push delivery claimed notification=281 outbox=281
+push provider accepted notification=281 device=WhFSlmnNIlVX
+push provider accepted notification=281 device=sHt4MtjL4lDw
+[wrangler:info] PUT /api/products/25 200 OK (381ms)
+[wrangler:info] GET /api/notifications 200 OK (24ms)
+[wrangler:info] PUT /api/notifications/274/read 200 OK (24ms)
+[wrangler:info] POST /api/login 204 No Content (479ms)
+[wrangler:info] GET /api/session 200 OK (28ms)
+[wrangler:info] PUT /api/notifications/274/read 200 OK (20ms)
+[wrangler:info] PUT /api/products/25 200 OK (25ms)
+[wrangler:info] GET /api/notifications 200 OK (48ms)
+[wrangler:info] POST /api/logout 204 No Content (35ms)
+[wrangler:info] GET /api/session 401 Unauthorized (23ms)
+[wrangler:info] POST /api/login 204 No Content (346ms)
+[wrangler:info] GET /api/session 200 OK (26ms)
+notification queued id=299 type=PASSWORD_RESET recipient=36
+[wrangler:info] POST /api/accounts/36/reset-password 200 OK (364ms)
+[wrangler:info] GET /api/session 401 Unauthorized (20ms)
+[wrangler:info] POST /api/login 204 No Content (324ms)
+[wrangler:info] GET /api/session 200 OK (25ms)
+[wrangler:info] POST /api/accounts 201 Created (350ms)
+[wrangler:info] POST /api/login 204 No Content (351ms)
+[wrangler:info] GET /api/session 200 OK (20ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (24ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (19ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (18ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (34ms)
+[wrangler:info] POST /api/test/push-reset 200 OK (33ms)
+[wrangler:info] POST /api/products 201 Created (43ms)
+notification queued id=300 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=301 type=PRODUCT_PRICE_CHANGED recipient=25
+notification queued id=302 type=PRODUCT_PRICE_CHANGED recipient=36
+notification queued id=303 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=304 type=PRODUCT_PRICE_CHANGED recipient=26
+notification queued id=305 type=PRODUCT_PRICE_CHANGED recipient=37
+notification queued id=306 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=307 type=PRODUCT_PRICE_CHANGED recipient=24
+notification queued id=308 type=PRODUCT_PRICE_CHANGED recipient=35
+notification queued id=309 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=310 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=311 type=PRODUCT_PRICE_CHANGED recipient=12
+notification queued id=312 type=PRODUCT_PRICE_CHANGED recipient=13
+notification queued id=313 type=PRODUCT_PRICE_CHANGED recipient=14
+notification queued id=314 type=PRODUCT_PRICE_CHANGED recipient=15
+notification queued id=315 type=PRODUCT_PRICE_CHANGED recipient=16
+notification queued id=316 type=PRODUCT_PRICE_CHANGED recipient=17
+notification queued id=317 type=PRODUCT_PRICE_CHANGED recipient=18
+notification queued id=318 type=PRODUCT_PRICE_CHANGED recipient=27
+notification queued id=319 type=PRODUCT_PRICE_CHANGED recipient=38
+notification queued id=320 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=321 type=PRODUCT_PRICE_CHANGED recipient=19
+notification queued id=322 type=PRODUCT_PRICE_CHANGED recipient=33
+notification queued id=323 type=PRODUCT_PRICE_CHANGED recipient=28
+notification queued id=324 type=PRODUCT_PRICE_CHANGED recipient=3
+notification queued id=325 type=PRODUCT_PRICE_CHANGED recipient=20
+notification queued id=326 type=PRODUCT_PRICE_CHANGED recipient=34
+notification queued id=327 type=PRODUCT_PRICE_CHANGED recipient=29
+push delivery claimed notification=300 outbox=300
+push delivery claimed notification=301 outbox=301
+push delivery claimed notification=302 outbox=302
+push delivery claimed notification=303 outbox=303
+push delivery claimed notification=304 outbox=304
+push delivery claimed notification=305 outbox=305
+push delivery claimed notification=306 outbox=306
+push delivery claimed notification=307 outbox=307
+push delivery claimed notification=308 outbox=308
+push delivery claimed notification=309 outbox=309
+push provider accepted notification=309 device=WhFSlmnNIlVX
+[wrangler:info] PUT /api/products/26 200 OK (363ms)
+[wrangler:info] GET /api/test/push-state 200 OK (16ms)
+[wrangler:info] GET /api/test/push-state 200 OK (40ms)
+[wrangler:info] GET /api/test/push-state 200 OK (46ms)
+[wrangler:info] GET /api/test/push-state 200 OK (52ms)
+[wrangler:info] GET /api/test/push-state 200 OK (47ms)
+[wrangler:info] GET /api/test/push-state 200 OK (42ms)
+[wrangler:info] GET /api/test/push-state 200 OK (38ms)
+[wrangler:info] GET /api/test/push-state 200 OK (49ms)
+[wrangler:info] GET /api/test/push-state 200 OK (45ms)
+[wrangler:info] GET /api/test/push-state 200 OK (45ms)
+[wrangler:info] GET /api/test/push-state 200 OK (48ms)
+[wrangler:info] GET /api/test/push-state 200 OK (50ms)
+[wrangler:info] GET /api/test/push-state 200 OK (47ms)
+[wrangler:info] GET /api/test/push-state 200 OK (45ms)
+[wrangler:info] GET /api/test/push-state 200 OK (51ms)
+[wrangler:info] GET /api/test/push-state 200 OK (52ms)
+[wrangler:info] GET /api/test/push-state 200 OK (47ms)
+[wrangler:info] GET /api/test/push-state 200 OK (47ms)
+[wrangler:info] GET /api/test/push-state 200 OK (58ms)
+[wrangler:info] GET /api/test/push-state 200 OK (57ms)
+[wrangler:info] GET /api/test/push-state 200 OK (50ms)
+[wrangler:info] GET /api/test/push-state 200 OK (47ms)
+[wrangler:info] GET /api/test/push-state 200 OK (48ms)
+[wrangler:info] GET /api/test/push-state 200 OK (43ms)
+[wrangler:info] GET /api/test/push-state 200 OK (58ms)
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+[wrangler:info] GET /api/session 401 Unauthorized (32ms)
+[wrangler:info] POST /api/login 204 No Content (207ms)
+[wrangler:info] GET /api/session 200 OK (18ms)
+[wrangler:info] POST /api/accounts 409 Conflict (265ms)
+[wrangler:info] POST /api/login 204 No Content (249ms)
+[wrangler:info] GET /api/session 200 OK (20ms)
+[wrangler:info] POST /api/accounts 409 Conflict (292ms)
+[wrangler:info] POST /api/login 204 No Content (208ms)
+[wrangler:info] GET /api/session 200 OK (20ms)
+[wrangler:info] POST /api/accounts 201 Created (314ms)
+[wrangler:info] POST /api/accounts 201 Created (453ms)
+[wrangler:info] POST /api/login 204 No Content (369ms)
+[wrangler:info] GET /api/session 200 OK (31ms)
+[wrangler:info] POST /api/login 204 No Content (453ms)
+[wrangler:info] GET /api/session 200 OK (25ms)
+[wrangler:info] POST /api/products 201 Created (35ms)
+[wrangler:info] POST /api/buyers 201 Created (32ms)
+notification queued id=328 type=ORDER_CONFIRMED recipient=1
+notification queued id=329 type=ORDER_CONFIRMED recipient=4
+notification queued id=330 type=ORDER_CONFIRMED recipient=21
+notification queued id=331 type=ORDER_CONFIRMED recipient=30
+[wrangler:info] POST /api/quotations 201 Created (145ms)
+notification queued id=332 type=ORDER_CONFIRMED recipient=1
+notification queued id=333 type=ORDER_CONFIRMED recipient=4
+notification queued id=334 type=ORDER_CONFIRMED recipient=21
+notification queued id=335 type=ORDER_CONFIRMED recipient=30
+[wrangler:info] POST /api/quotations 201 Created (115ms)
+notification queued id=336 type=ORDER_CONFIRMED recipient=1
+notification queued id=337 type=ORDER_CONFIRMED recipient=4
+notification queued id=338 type=ORDER_CONFIRMED recipient=21
+notification queued id=339 type=ORDER_CONFIRMED recipient=30
+[wrangler:info] POST /api/quotations 201 Created (86ms)
+[wrangler:info] GET /api/quotations 200 OK (49ms)
+[wrangler:info] POST /api/login 204 No Content (409ms)
+[wrangler:info] GET /api/session 200 OK (30ms)
+[wrangler:info] POST /api/accounts 201 Created (476ms)
+[wrangler:info] POST /api/buyers 201 Created (41ms)
+[wrangler:info] POST /api/products 201 Created (32ms)
+[wrangler:info] PUT /api/settings/pdf-header 200 OK (25ms)
+[wrangler:info] POST /api/login 204 No Content (425ms)
+[wrangler:info] GET /api/session 200 OK (37ms)
+[wrangler:info] PUT /api/settings/pdf-header 403 Forbidden (31ms)
+notification queued id=340 type=ORDER_CONFIRMED recipient=4
+notification queued id=341 type=ORDER_CONFIRMED recipient=21
+notification queued id=342 type=ORDER_CONFIRMED recipient=30
+[wrangler:info] POST /api/quotations 201 Created (126ms)
+[wrangler:info] POST /api/quotations 400 Bad Request (36ms)
+notification queued id=343 type=ORDER_CONFIRMED recipient=1
+notification queued id=344 type=ORDER_CONFIRMED recipient=4
+notification queued id=345 type=ORDER_CONFIRMED recipient=21
+notification queued id=346 type=ORDER_CONFIRMED recipient=30
+[wrangler:info] POST /api/quotations 201 Created (156ms)
+notification queued id=347 type=ORDER_CONFIRMED recipient=1
+notification queued id=348 type=ORDER_CONFIRMED recipient=4
+notification queued id=349 type=ORDER_CONFIRMED recipient=21
+notification queued id=350 type=ORDER_CONFIRMED recipient=30
+[wrangler:info] POST /api/quotations 201 Created (89ms)
+[wrangler:info] POST /api/quotations 422 Unprocessable Entity (27ms)
+notification queued id=351 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=352 type=PRODUCT_PRICE_CHANGED recipient=25
+notification queued id=353 type=PRODUCT_PRICE_CHANGED recipient=36
+notification queued id=354 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=355 type=PRODUCT_PRICE_CHANGED recipient=26
+notification queued id=356 type=PRODUCT_PRICE_CHANGED recipient=37
+notification queued id=357 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=358 type=PRODUCT_PRICE_CHANGED recipient=24
+notification queued id=359 type=PRODUCT_PRICE_CHANGED recipient=41
+notification queued id=360 type=PRODUCT_PRICE_CHANGED recipient=35
+notification queued id=361 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=362 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=363 type=PRODUCT_PRICE_CHANGED recipient=12
+notification queued id=364 type=PRODUCT_PRICE_CHANGED recipient=13
+notification queued id=365 type=PRODUCT_PRICE_CHANGED recipient=14
+notification queued id=366 type=PRODUCT_PRICE_CHANGED recipient=15
+notification queued id=367 type=PRODUCT_PRICE_CHANGED recipient=16
+notification queued id=368 type=PRODUCT_PRICE_CHANGED recipient=17
+notification queued id=369 type=PRODUCT_PRICE_CHANGED recipient=18
+notification queued id=370 type=PRODUCT_PRICE_CHANGED recipient=27
+notification queued id=371 type=PRODUCT_PRICE_CHANGED recipient=38
+notification queued id=372 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=373 type=PRODUCT_PRICE_CHANGED recipient=19
+notification queued id=374 type=PRODUCT_PRICE_CHANGED recipient=39
+notification queued id=375 type=PRODUCT_PRICE_CHANGED recipient=33
+notification queued id=376 type=PRODUCT_PRICE_CHANGED recipient=28
+notification queued id=377 type=PRODUCT_PRICE_CHANGED recipient=3
+notification queued id=378 type=PRODUCT_PRICE_CHANGED recipient=20
+notification queued id=379 type=PRODUCT_PRICE_CHANGED recipient=40
+notification queued id=380 type=PRODUCT_PRICE_CHANGED recipient=34
+notification queued id=381 type=PRODUCT_PRICE_CHANGED recipient=29
+push delivery claimed notification=351 outbox=351
+push delivery claimed notification=352 outbox=352
+push delivery claimed notification=353 outbox=353
+push delivery claimed notification=354 outbox=354
+push delivery claimed notification=355 outbox=355
+push delivery claimed notification=356 outbox=356
+push delivery claimed notification=357 outbox=357
+push delivery claimed notification=358 outbox=358
+push delivery claimed notification=359 outbox=359
+push delivery claimed notification=360 outbox=360
+[wrangler:info] PUT /api/products/28 200 OK (498ms)
+[wrangler:info] POST /api/quotations 200 OK (24ms)
+[wrangler:info] POST /api/quotations 422 Unprocessable Entity (29ms)
+[wrangler:info] POST /api/login 204 No Content (446ms)
+[wrangler:info] GET /api/session 200 OK (28ms)
+[wrangler:info] POST /api/accounts 409 Conflict (443ms)
+[wrangler:info] POST /api/accounts 409 Conflict (460ms)
+[wrangler:info] POST /api/login 204 No Content (392ms)
+[wrangler:info] GET /api/session 200 OK (31ms)
+[wrangler:info] POST /api/accounts 201 Created (454ms)
+[wrangler:info] POST /api/login 204 No Content (437ms)
+[wrangler:info] GET /api/session 200 OK (26ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (32ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (24ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (26ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (29ms)
+[wrangler:info] POST /api/test/push-reset 200 OK (34ms)
+[wrangler:info] POST /api/products 201 Created (41ms)
+notification queued id=382 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=383 type=PRODUCT_PRICE_CHANGED recipient=25
+notification queued id=384 type=PRODUCT_PRICE_CHANGED recipient=36
+notification queued id=385 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=386 type=PRODUCT_PRICE_CHANGED recipient=26
+notification queued id=387 type=PRODUCT_PRICE_CHANGED recipient=37
+notification queued id=388 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=389 type=PRODUCT_PRICE_CHANGED recipient=24
+notification queued id=390 type=PRODUCT_PRICE_CHANGED recipient=41
+notification queued id=391 type=PRODUCT_PRICE_CHANGED recipient=35
+notification queued id=392 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=393 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=394 type=PRODUCT_PRICE_CHANGED recipient=12
+notification queued id=395 type=PRODUCT_PRICE_CHANGED recipient=13
+notification queued id=396 type=PRODUCT_PRICE_CHANGED recipient=14
+notification queued id=397 type=PRODUCT_PRICE_CHANGED recipient=15
+notification queued id=398 type=PRODUCT_PRICE_CHANGED recipient=16
+notification queued id=399 type=PRODUCT_PRICE_CHANGED recipient=17
+notification queued id=400 type=PRODUCT_PRICE_CHANGED recipient=18
+notification queued id=401 type=PRODUCT_PRICE_CHANGED recipient=27
+notification queued id=402 type=PRODUCT_PRICE_CHANGED recipient=38
+notification queued id=403 type=PRODUCT_PRICE_CHANGED recipient=42
+notification queued id=404 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=405 type=PRODUCT_PRICE_CHANGED recipient=19
+notification queued id=406 type=PRODUCT_PRICE_CHANGED recipient=39
+notification queued id=407 type=PRODUCT_PRICE_CHANGED recipient=33
+notification queued id=408 type=PRODUCT_PRICE_CHANGED recipient=28
+notification queued id=409 type=PRODUCT_PRICE_CHANGED recipient=3
+notification queued id=410 type=PRODUCT_PRICE_CHANGED recipient=20
+notification queued id=411 type=PRODUCT_PRICE_CHANGED recipient=40
+notification queued id=412 type=PRODUCT_PRICE_CHANGED recipient=34
+notification queued id=413 type=PRODUCT_PRICE_CHANGED recipient=29
+push delivery claimed notification=382 outbox=382
+push delivery claimed notification=383 outbox=383
+push delivery claimed notification=384 outbox=384
+push delivery claimed notification=385 outbox=385
+push delivery claimed notification=386 outbox=386
+push delivery claimed notification=387 outbox=387
+push delivery claimed notification=388 outbox=388
+push delivery claimed notification=389 outbox=389
+push delivery claimed notification=390 outbox=390
+push delivery claimed notification=391 outbox=391
+[wrangler:info] PUT /api/products/29 200 OK (594ms)
+[wrangler:info] GET /api/test/push-state 200 OK (30ms)
+[wrangler:info] GET /api/test/push-state 200 OK (71ms)
+[wrangler:info] GET /api/test/push-state 200 OK (40ms)
+[wrangler:info] GET /api/test/push-state 200 OK (44ms)
+[wrangler:info] GET /api/test/push-state 200 OK (39ms)
+[wrangler:info] GET /api/test/push-state 200 OK (39ms)
+[wrangler:info] GET /api/test/push-state 200 OK (37ms)
+[wrangler:info] GET /api/test/push-state 200 OK (50ms)
+[wrangler:info] GET /api/test/push-state 200 OK (29ms)
+[wrangler:info] GET /api/test/push-state 200 OK (30ms)
+[wrangler:info] GET /api/test/push-state 200 OK (72ms)
+[wrangler:info] GET /api/test/push-state 200 OK (39ms)
+[wrangler:info] GET /api/test/push-state 200 OK (42ms)
+[wrangler:info] GET /api/test/push-state 200 OK (26ms)
+[wrangler:info] GET /api/test/push-state 200 OK (63ms)
+[wrangler:info] GET /api/test/push-state 200 OK (67ms)
+[wrangler:info] GET /api/test/push-state 200 OK (68ms)
+[wrangler:info] GET /api/test/push-state 200 OK (47ms)
+[wrangler:info] GET /api/test/push-state 200 OK (36ms)
+[wrangler:info] GET /api/test/push-state 200 OK (41ms)
+[wrangler:info] GET /api/test/push-state 200 OK (38ms)
+[wrangler:info] GET /api/test/push-state 200 OK (52ms)
+[wrangler:info] GET /api/test/push-state 200 OK (35ms)
+[wrangler:info] GET /api/test/push-state 200 OK (57ms)
+[wrangler:info] GET /api/test/push-state 200 OK (81ms)
+[wrangler:info] GET /api/test/push-state 200 OK (52ms)
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+[wrangler:info] GET /api/session 401 Unauthorized (27ms)
+[wrangler:info] POST /api/login 204 No Content (212ms)
+[wrangler:info] GET /api/session 200 OK (20ms)
+[wrangler:info] POST /api/accounts 409 Conflict (299ms)
+[wrangler:info] POST /api/login 204 No Content (206ms)
+[wrangler:info] GET /api/session 200 OK (23ms)
+[wrangler:info] POST /api/accounts 201 Created (256ms)
+[wrangler:info] POST /api/accounts 201 Created (216ms)
+[wrangler:info] POST /api/login 204 No Content (248ms)
+[wrangler:info] GET /api/session 200 OK (19ms)
+[wrangler:info] POST /api/login 204 No Content (201ms)
+[wrangler:info] GET /api/session 200 OK (20ms)
+[wrangler:info] POST /api/products 201 Created (25ms)
+[wrangler:info] POST /api/buyers 201 Created (23ms)
+notification queued id=414 type=ORDER_CONFIRMED recipient=1
+notification queued id=415 type=ORDER_CONFIRMED recipient=4
+notification queued id=416 type=ORDER_CONFIRMED recipient=21
+notification queued id=417 type=ORDER_CONFIRMED recipient=30
+[wrangler:info] POST /api/quotations 201 Created (101ms)
+notification queued id=418 type=ORDER_CONFIRMED recipient=1
+notification queued id=419 type=ORDER_CONFIRMED recipient=4
+notification queued id=420 type=ORDER_CONFIRMED recipient=21
+notification queued id=421 type=ORDER_CONFIRMED recipient=30
+[wrangler:info] POST /api/quotations 201 Created (86ms)
+notification queued id=422 type=ORDER_CONFIRMED recipient=1
+notification queued id=423 type=ORDER_CONFIRMED recipient=4
+notification queued id=424 type=ORDER_CONFIRMED recipient=21
+notification queued id=425 type=ORDER_CONFIRMED recipient=30
+[wrangler:info] POST /api/quotations 201 Created (84ms)
+[wrangler:info] GET /api/quotations 200 OK (25ms)
+[wrangler:info] POST /api/login 204 No Content (361ms)
+[wrangler:info] GET /api/session 200 OK (20ms)
+[wrangler:info] POST /api/accounts 201 Created (467ms)
+[wrangler:info] POST /api/login 204 No Content (389ms)
+[wrangler:info] GET /api/session 200 OK (33ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (38ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (42ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (30ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (29ms)
+[wrangler:info] POST /api/test/push-reset 200 OK (24ms)
+[wrangler:info] POST /api/products 201 Created (36ms)
+notification queued id=426 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=427 type=PRODUCT_PRICE_CHANGED recipient=25
+notification queued id=428 type=PRODUCT_PRICE_CHANGED recipient=36
+notification queued id=429 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=430 type=PRODUCT_PRICE_CHANGED recipient=26
+notification queued id=431 type=PRODUCT_PRICE_CHANGED recipient=37
+notification queued id=432 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=433 type=PRODUCT_PRICE_CHANGED recipient=24
+notification queued id=434 type=PRODUCT_PRICE_CHANGED recipient=41
+notification queued id=435 type=PRODUCT_PRICE_CHANGED recipient=35
+notification queued id=436 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=437 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=438 type=PRODUCT_PRICE_CHANGED recipient=12
+notification queued id=439 type=PRODUCT_PRICE_CHANGED recipient=13
+notification queued id=440 type=PRODUCT_PRICE_CHANGED recipient=14
+notification queued id=441 type=PRODUCT_PRICE_CHANGED recipient=15
+notification queued id=442 type=PRODUCT_PRICE_CHANGED recipient=16
+notification queued id=443 type=PRODUCT_PRICE_CHANGED recipient=17
+notification queued id=444 type=PRODUCT_PRICE_CHANGED recipient=18
+notification queued id=445 type=PRODUCT_PRICE_CHANGED recipient=27
+notification queued id=446 type=PRODUCT_PRICE_CHANGED recipient=38
+notification queued id=447 type=PRODUCT_PRICE_CHANGED recipient=42
+notification queued id=448 type=PRODUCT_PRICE_CHANGED recipient=45
+notification queued id=449 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=450 type=PRODUCT_PRICE_CHANGED recipient=19
+notification queued id=451 type=PRODUCT_PRICE_CHANGED recipient=43
+notification queued id=452 type=PRODUCT_PRICE_CHANGED recipient=39
+notification queued id=453 type=PRODUCT_PRICE_CHANGED recipient=33
+notification queued id=454 type=PRODUCT_PRICE_CHANGED recipient=28
+notification queued id=455 type=PRODUCT_PRICE_CHANGED recipient=3
+notification queued id=456 type=PRODUCT_PRICE_CHANGED recipient=20
+notification queued id=457 type=PRODUCT_PRICE_CHANGED recipient=44
+notification queued id=458 type=PRODUCT_PRICE_CHANGED recipient=40
+notification queued id=459 type=PRODUCT_PRICE_CHANGED recipient=34
+notification queued id=460 type=PRODUCT_PRICE_CHANGED recipient=29
+push delivery claimed notification=426 outbox=426
+push delivery claimed notification=427 outbox=427
+push delivery claimed notification=428 outbox=428
+push delivery claimed notification=429 outbox=429
+push delivery claimed notification=430 outbox=430
+push delivery claimed notification=431 outbox=431
+push delivery claimed notification=432 outbox=432
+push delivery claimed notification=433 outbox=433
+push delivery claimed notification=434 outbox=434
+push delivery claimed notification=435 outbox=435
+[wrangler:info] PUT /api/products/31 200 OK (713ms)
+[wrangler:info] GET /api/test/push-state 200 OK (30ms)
+[wrangler:info] GET /api/test/push-state 200 OK (29ms)
+[wrangler:info] GET /api/test/push-state 200 OK (37ms)
+[wrangler:info] GET /api/test/push-state 200 OK (38ms)
+[wrangler:info] GET /api/test/push-state 200 OK (41ms)
+[wrangler:info] GET /api/test/push-state 200 OK (39ms)
+[wrangler:info] GET /api/test/push-state 200 OK (47ms)
+[wrangler:info] GET /api/test/push-state 200 OK (40ms)
+[wrangler:info] GET /api/test/push-state 200 OK (44ms)
+[wrangler:info] GET /api/test/push-state 200 OK (33ms)
+[wrangler:info] GET /api/test/push-state 200 OK (35ms)
+[wrangler:info] GET /api/test/push-state 200 OK (48ms)
+[wrangler:info] GET /api/test/push-state 200 OK (26ms)
+[wrangler:info] GET /api/test/push-state 200 OK (42ms)
+[wrangler:info] GET /api/test/push-state 200 OK (26ms)
+[wrangler:info] GET /api/test/push-state 200 OK (25ms)
+[wrangler:info] GET /api/test/push-state 200 OK (29ms)
+[wrangler:info] GET /api/test/push-state 200 OK (31ms)
+[wrangler:info] GET /api/test/push-state 200 OK (39ms)
+[wrangler:info] GET /api/test/push-state 200 OK (22ms)
+[wrangler:info] GET /api/test/push-state 200 OK (31ms)
+[wrangler:info] GET /api/test/push-state 200 OK (32ms)
+[wrangler:info] GET /api/test/push-state 200 OK (19ms)
+[wrangler:info] GET /api/test/push-state 200 OK (45ms)
+[wrangler:info] GET /api/test/push-state 200 OK (36ms)
+[wrangler:info] GET /api/test/push-state 200 OK (33ms)
+[wrangler:info] GET /api/test/push-state 200 OK (22ms)
+[wrangler:info] GET /api/test/push-state 200 OK (20ms)
+[wrangler:info] GET /api/test/push-state 200 OK (18ms)
+[wrangler:info] GET /api/session 401 Unauthorized (23ms)
+[wrangler:info] GET /api/session 401 Unauthorized (48ms)
+[wrangler:info] POST /api/login 204 No Content (239ms)
+[wrangler:info] GET /api/session 200 OK (28ms)
+[wrangler:info] POST /api/accounts 409 Conflict (237ms)
+[wrangler:info] POST /api/login 204 No Content (211ms)
+[wrangler:info] GET /api/session 200 OK (22ms)
+[wrangler:info] POST /api/accounts 201 Created (216ms)
+[wrangler:info] POST /api/login 204 No Content (312ms)
+[wrangler:info] GET /api/session 200 OK (16ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (22ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (23ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (24ms)
+[wrangler:info] POST /api/push/subscriptions 201 Created (26ms)
+[wrangler:info] POST /api/test/push-reset 200 OK (22ms)
+[wrangler:info] POST /api/products 201 Created (37ms)
+notification queued id=461 type=PRODUCT_PRICE_CHANGED recipient=8
+notification queued id=462 type=PRODUCT_PRICE_CHANGED recipient=25
+notification queued id=463 type=PRODUCT_PRICE_CHANGED recipient=36
+notification queued id=464 type=PRODUCT_PRICE_CHANGED recipient=9
+notification queued id=465 type=PRODUCT_PRICE_CHANGED recipient=26
+notification queued id=466 type=PRODUCT_PRICE_CHANGED recipient=37
+notification queued id=467 type=PRODUCT_PRICE_CHANGED recipient=7
+notification queued id=468 type=PRODUCT_PRICE_CHANGED recipient=24
+notification queued id=469 type=PRODUCT_PRICE_CHANGED recipient=41
+notification queued id=470 type=PRODUCT_PRICE_CHANGED recipient=35
+notification queued id=471 type=PRODUCT_PRICE_CHANGED recipient=10
+notification queued id=472 type=PRODUCT_PRICE_CHANGED recipient=11
+notification queued id=473 type=PRODUCT_PRICE_CHANGED recipient=12
+notification queued id=474 type=PRODUCT_PRICE_CHANGED recipient=13
+notification queued id=475 type=PRODUCT_PRICE_CHANGED recipient=14
+notification queued id=476 type=PRODUCT_PRICE_CHANGED recipient=15
+notification queued id=477 type=PRODUCT_PRICE_CHANGED recipient=16
+notification queued id=478 type=PRODUCT_PRICE_CHANGED recipient=17
+notification queued id=479 type=PRODUCT_PRICE_CHANGED recipient=18
+notification queued id=480 type=PRODUCT_PRICE_CHANGED recipient=27
+notification queued id=481 type=PRODUCT_PRICE_CHANGED recipient=38
+notification queued id=482 type=PRODUCT_PRICE_CHANGED recipient=42
+notification queued id=483 type=PRODUCT_PRICE_CHANGED recipient=45
+notification queued id=484 type=PRODUCT_PRICE_CHANGED recipient=46
+notification queued id=485 type=PRODUCT_PRICE_CHANGED recipient=2
+notification queued id=486 type=PRODUCT_PRICE_CHANGED recipient=19
+notification queued id=487 type=PRODUCT_PRICE_CHANGED recipient=43
+notification queued id=488 type=PRODUCT_PRICE_CHANGED recipient=39
+notification queued id=489 type=PRODUCT_PRICE_CHANGED recipient=33
+notification queued id=490 type=PRODUCT_PRICE_CHANGED recipient=28
+notification queued id=491 type=PRODUCT_PRICE_CHANGED recipient=3
+notification queued id=492 type=PRODUCT_PRICE_CHANGED recipient=20
+notification queued id=493 type=PRODUCT_PRICE_CHANGED recipient=44
+notification queued id=494 type=PRODUCT_PRICE_CHANGED recipient=40
+notification queued id=495 type=PRODUCT_PRICE_CHANGED recipient=34
+notification queued id=496 type=PRODUCT_PRICE_CHANGED recipient=29
+push delivery claimed notification=461 outbox=461
+push delivery claimed notification=462 outbox=462
+push delivery claimed notification=463 outbox=463
+push delivery claimed notification=464 outbox=464
+push delivery claimed notification=465 outbox=465
+push delivery claimed notification=466 outbox=466
+push delivery claimed notification=467 outbox=467
+push delivery claimed notification=468 outbox=468
+push delivery claimed notification=469 outbox=469
+push delivery claimed notification=470 outbox=470
+[wrangler:info] PUT /api/products/32 200 OK (560ms)
+[wrangler:info] GET /api/test/push-state 200 OK (20ms)
+[wrangler:info] GET /api/test/push-state 200 OK (17ms)
+[wrangler:info] GET /api/test/push-state 200 OK (18ms)
+[wrangler:info] GET /api/test/push-state 200 OK (46ms)
+[wrangler:info] GET /api/test/push-state 200 OK (68ms)
+[wrangler:info] GET /api/test/push-state 200 OK (72ms)
+[wrangler:info] GET /api/test/push-state 200 OK (29ms)
+[wrangler:info] GET /api/test/push-state 200 OK (100ms)
+[wrangler:info] GET /api/test/push-state 200 OK (29ms)
+[wrangler:info] GET /api/test/push-state 200 OK (21ms)
+[wrangler:info] GET /api/test/push-state 200 OK (70ms)
+[wrangler:info] GET /api/test/push-state 200 OK (44ms)
+[wrangler:info] GET /api/test/push-state 200 OK (45ms)
+[wrangler:info] GET /api/test/push-state 200 OK (27ms)
+[wrangler:info] GET /api/test/push-state 200 OK (37ms)
+[wrangler:info] GET /api/test/push-state 200 OK (33ms)
+[wrangler:info] GET /api/test/push-state 200 OK (41ms)
+[wrangler:info] GET /api/test/push-state 200 OK (64ms)
+[wrangler:info] GET /api/test/push-state 200 OK (60ms)
+[wrangler:info] GET /api/test/push-state 200 OK (36ms)
+[wrangler:info] GET /api/test/push-state 200 OK (32ms)
+[wrangler:info] GET /api/test/push-state 200 OK (39ms)
+[wrangler:info] GET /api/test/push-state 200 OK (18ms)
+[wrangler:info] GET /api/test/push-state 200 OK (35ms)
+[wrangler:info] GET /api/test/push-state 200 OK (27ms)
+[wrangler:info] GET /api/test/push-state 200 OK (24ms)
+[wrangler:info] GET /api/test/push-state 200 OK (32ms)
+[wrangler:info] GET /api/session 401 Unauthorized (29ms)
+[wrangler:info] POST /api/login 204 No Content (199ms)
+[wrangler:info] GET /api/test/isolation-marker 200 OK (19ms)
+[wrangler:info] GET /api/session 401 Unauthorized (40ms)
+[wrangler:info] POST /api/login 204 No Content (204ms)
+[wrangler:info] GET /api/test/isolation-marker 200 OK (15ms)
+[wrangler:info] GET /api/session 401 Unauthorized (19ms)
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready
+⎔ Reloading local server...
+⎔ Local server updated and ready

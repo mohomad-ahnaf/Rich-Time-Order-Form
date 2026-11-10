@@ -1,0 +1,12 @@
+{
+    "base_url":  "http://127.0.0.1:8820",
+    "port":  8820,
+    "config_path":  "F:\\Business\\Rich Time\\.cache\\manual-isolated-http\\5814862e8af347858151fe18a059b458\\wrangler.toml",
+    "state_path":  "F:/Business/Rich Time/.cache/manual-isolated-http/5814862e8af347858151fe18a059b458/.wrangler/state",
+    "database_name":  "manual-isolated-5814862e8af347858151fe18a059b458",
+    "database_id":  "57f75b01-009a-4f57-bcd4-cdb5a4c00684",
+    "marker":  "75ad5508bf454297bb5296de6114db97",
+    "logs_path":  "F:\\Business\\Rich Time\\.cache\\manual-isolated-http\\5814862e8af347858151fe18a059b458\\logs",
+    "admin_username":  "Admin",
+    "admin_password":  "Manual-isolated-dummy-password!"
+}

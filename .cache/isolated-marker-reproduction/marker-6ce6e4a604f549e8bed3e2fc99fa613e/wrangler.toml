@@ -1,0 +1,17 @@
+name = "rsk-marker-marker6ce6e4a604f549e8bed3e2fc99fa613e"
+main = "F:/Business/Rich Time/src/worker.ts"
+compatibility_date = "2025-01-29"
+assets = { directory = "F:/Business/Rich Time/dist", binding = "ASSETS", not_found_handling = "single-page-application" }
+[vars]
+OWNER_USERNAME = "Admin"
+OWNER_PASSWORD_HASH = "pbkdf2$210000$y_qwF5PTXcfPJksKxfFAtA$hRNmZzXDX_0EqkfFoPuQujro43LwKgs6jm_1GkQQdQw"
+SESSION_SECRET = "marker-only-dummy-session-secret"
+VAPID_PUBLIC_KEY = "test-only-public-key"
+VAPID_PRIVATE_KEY = "test-only-private-key"
+VAPID_SUBJECT = "mailto:tests@example.invalid"
+PUSH_TEST_MODE = "1"
+[[d1_databases]]
+binding = "DB"
+database_name = "rsk-marker-marker6ce6e4a604f549e8bed3e2fc99fa613e"
+database_id = "9279974b-39bd-41f8-928f-0c2637cc1c2c"
+migrations_dir = "F:/Business/Rich Time/migrations"

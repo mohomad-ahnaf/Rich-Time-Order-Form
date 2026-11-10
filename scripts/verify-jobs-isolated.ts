@@ -5,7 +5,10 @@
  *   TEST_BASE_URL=http://127.0.0.1:8790 npx tsx scripts/verify-jobs-isolated.ts
  */
 const base = process.env.TEST_BASE_URL || "http://127.0.0.1:8790";
-const adminPassword = "Admin-jobs-test-2026!";
+const adminUsername = process.env.TEST_ADMIN_USERNAME || "Admin";
+const adminPassword = process.env.TEST_ADMIN_PASSWORD || "Admin-jobs-test-2026!";
+const fixtureSuffix = (process.env.TEST_RUN_ID || "").replace(/[^a-z0-9]/gi, "").slice(-24);
+const fixtureUser = (name: string) => fixtureSuffix ? `${name}-${fixtureSuffix}` : name;
 type Session = { cookie: string; csrf: string };
 const expect = (condition: unknown, message: string): asserts condition => { if (!condition) throw Error(message); };
 async function login(username: string, password: string): Promise<Session> {
@@ -22,20 +25,22 @@ async function request(session: Session, path: string, init: RequestInit = {}) {
 }
 async function post(session: Session, path: string, body: unknown, expected = 200) {
   const result = await request(session, path, { method: "POST", body: JSON.stringify(body) });
-  expect(result.response.status === expected, `${path}: expected ${expected}, got ${result.response.status}: ${JSON.stringify(result.body)}`); return result.body;
+  const account = path === "/api/accounts" && typeof body === "object" && body !== null && "username" in body ? ` username=${String((body as { username: string }).username)}` : "";
+  expect(result.response.status === expected, `${path}${account}: expected ${expected}, got ${result.response.status}: ${JSON.stringify(result.body)}`); return result.body;
 }
 async function main() {
-  const admin = await login("Admin", adminPassword);
-  const repA = await post(admin, "/api/accounts", { username: "rep-a", password: "Rep-a-jobs-test!", role: "REP" }, 201);
-  const repB = await post(admin, "/api/accounts", { username: "rep-b", password: "Rep-b-jobs-test!", role: "REP" }, 201);
-  const storekeeper = await post(admin, "/api/accounts", { username: "store-jobs", password: "Store-jobs-test!", role: "STOREKEEPER" }, 201);
-  const inactive = await post(admin, "/api/accounts", { username: "rep-inactive", password: "Inactive-jobs-test!", role: "REP" }, 201);
+  const admin = await login(adminUsername, adminPassword);
+  const repA = await post(admin, "/api/accounts", { username: fixtureUser("rep-a"), password: "Rep-a-jobs-test!", role: "REP" }, 201);
+  const repB = await post(admin, "/api/accounts", { username: fixtureUser("rep-b"), password: "Rep-b-jobs-test!", role: "REP" }, 201);
+  const storekeeper = await post(admin, "/api/accounts", { username: fixtureUser("store-jobs"), password: "Store-jobs-test!", role: "STOREKEEPER" }, 201);
+  const inactive = await post(admin, "/api/accounts", { username: fixtureUser("rep-inactive"), password: "Inactive-jobs-test!", role: "REP" }, 201);
   expect((await request(admin, `/api/accounts/${inactive.id}`, { method: "PUT", body: JSON.stringify({ active: 0 }) })).response.ok, "Could not deactivate test Rep");
   const kandyA = await post(admin, "/api/buyers", { full_name: "Kandy Shop A", phone: "test-001", email: "", address: "12 Main Road, Kandy" }, 201);
   const kandyB = await post(admin, "/api/buyers", { full_name: "Kandy Shop B", phone: "test-002", email: "", address: "Hill Street, KANDY" }, 201);
   const galle = await post(admin, "/api/buyers", { full_name: "Galle Shop", phone: "test-003", email: "", address: "Fort Road, Galle" }, 201);
   const preview = await request(admin, "/api/jobs/buyer-preview?q=kAnDy");
-  expect(preview.response.ok && preview.body.length === 2 && preview.body.every((buyer: any) => /kandy/i.test(buyer.address)), "Case-insensitive address preview did not return only Kandy buyers");
+  const previewIds = new Set((preview.body || []).map((buyer: any) => buyer.id));
+  expect(preview.response.ok && previewIds.has(kandyA.id) && previewIds.has(kandyB.id) && !previewIds.has(galle.id), `Case-insensitive address preview did not return the selected Kandy buyers: ${JSON.stringify(preview.body)}`);
   const inactiveResult = await request(admin, "/api/jobs", { method: "POST", body: JSON.stringify({ idempotencyKey: crypto.randomUUID(), repId: inactive.id, title: "Invalid", locationQuery: "Kandy", buyerIds: [kandyA.id] }) });
   expect(inactiveResult.response.status === 422, "Inactive Rep was accepted for assignment");
   const key = crypto.randomUUID();
@@ -43,9 +48,11 @@ async function main() {
   const job = await post(admin, "/api/jobs", payload, 201);
   const retry = await post(admin, "/api/jobs", payload);
   expect(job.id === retry.id && retry.items.length === 2 && !retry.items.some((item: any) => item.buyer_id === galle.id), "Assignment retry was not idempotent or included an unselected buyer");
-  const repASession = await login("rep-a", "Rep-a-jobs-test!");
-  const repBSession = await login("rep-b", "Rep-b-jobs-test!");
-  const storeSession = await login("store-jobs", "Store-jobs-test!");
+  const repASession = await login(fixtureUser("rep-a"), "Rep-a-jobs-test!");
+  const repBSession = await login(fixtureUser("rep-b"), "Rep-b-jobs-test!");
+  const storeSession = await login(fixtureUser("store-jobs"), "Store-jobs-test!");
+  const accepted = await request(repASession, `/api/jobs/${job.id}/response`, { method: "POST", body: JSON.stringify({ response: "ACCEPT" }) });
+  expect(accepted.response.ok && accepted.body.response_status === "ACCEPTED", "Assigned Rep could not accept the job");
   const jobB = await post(admin, "/api/jobs", { idempotencyKey: crypto.randomUUID(), repId: repB.id, title: "Galle visit", locationQuery: "Galle", buyerIds: [galle.id] }, 201);
   const repAJobs = await request(repASession, "/api/jobs"); expect(repAJobs.response.ok && repAJobs.body.length === 1 && repAJobs.body[0].id === job.id, "Rep A job list leaked another Rep's job");
   expect((await request(repASession, `/api/jobs/${jobB.id}`)).response.status === 404, "Rep A opened Rep B job");

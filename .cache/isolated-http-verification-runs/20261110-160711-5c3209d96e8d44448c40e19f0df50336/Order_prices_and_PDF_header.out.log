@@ -1,0 +1,1 @@
+PASS: isolated order-price, idempotency, and PDF-header API checks

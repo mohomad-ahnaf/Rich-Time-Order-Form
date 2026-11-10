@@ -1,4 +1,6 @@
 const base = process.env.TEST_BASE || "http://127.0.0.1:8790";
+const fixtureSuffix = (process.env.TEST_RUN_ID || "").replace(/[^a-z0-9]/gi, "").slice(-24);
+const pricingRep = fixtureSuffix ? `pricing-rep-${fixtureSuffix}` : "pricing-rep";
 
 type Session = { cookie: string; csrf: string };
 
@@ -36,9 +38,9 @@ async function request<T>(session: Session, path: string, method = "GET", body?:
 const key = () => crypto.randomUUID();
 
 async function main() {
-  const admin = await login("test-admin", "test-password");
-  const createdRep = await request<{ id: number }>(admin, "/api/accounts", "POST", { username: "pricing-rep", password: "rep-password" });
-  assert(createdRep.response.status === 201, "Admin could not create test Rep");
+  const admin = await login(process.env.TEST_ADMIN_USERNAME || "test-admin", process.env.TEST_ADMIN_PASSWORD || "test-password");
+  const createdRep = await request<{ id: number }>(admin, "/api/accounts", "POST", { username: pricingRep, password: "rep-password" });
+  assert(createdRep.response.status === 201, `Admin could not create test Rep (${createdRep.response.status}: ${JSON.stringify(createdRep.body)})`);
   const buyer = await request<{ id: number }>(admin, "/api/buyers", "POST", { full_name: "PRICE TEST BUYER", phone: "DEV-PRICE-001", email: "", address: "1 Test Street\nColombo" });
   assert(buyer.response.status === 201, "Could not create test buyer");
   const product = await request<{ id: number }>(admin, "/api/products", "POST", { name: "PRICE TEST PRODUCT", price_minor: 850000 });
@@ -51,7 +53,7 @@ async function main() {
   });
   assert(header.response.ok && header.body.shop_name === "Test Holdings", "Admin PDF header did not persist");
 
-  const rep = await login("pricing-rep", "rep-password");
+  const rep = await login(pricingRep, "rep-password");
   const deniedHeader = await request(rep, "/api/settings/pdf-header", "PUT", { shop_name: "Nope", address: "Nope", phone: "Nope", document_title: "Nope" });
   assert(deniedHeader.response.status === 403, "Rep was allowed to edit the PDF header");
 

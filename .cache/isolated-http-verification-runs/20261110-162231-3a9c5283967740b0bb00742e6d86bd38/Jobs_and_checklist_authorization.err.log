@@ -1,0 +1,5 @@
+Error: /api/accounts: expected 201, got 409: {"error":"Username is already in use"}
+    at expect (F:\Business\Rich Time\scripts\verify-jobs-isolated.ts:11:100)
+    at post (F:\Business\Rich Time\scripts\verify-jobs-isolated.ts:26:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async main (F:\Business\Rich Time\scripts\verify-jobs-isolated.ts:30:16)

@@ -1,0 +1,569 @@
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mScheduled Workers are not automatically triggered during local development.[0m
+
+  To manually trigger a scheduled event, run:
+    curl "http://127.0.0.1:8810/cdn-cgi/local/scheduled"
+  For more details, see [4mhttps://developers.cloudflare.com/workers/configuration/cron-triggers/#test-cron-triggers-locally[0m
+
+
+[31mX [41;31m[[41;97mERROR[41;31m][0m [1mBuild failed with 1 error:[0m
+
+  [31mX [41;31m[[41;97mERROR[41;31m][0m [1mCould not resolve "F:\\Business\\Rich Time\\.cache\\isolated-http-verification-runtime\\.wrangler\\tmp\\bundle-zyX0Ki\\middleware-loader.entry.ts"[0m
+  
+  
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery expired notification=30 device=hKZ_NggXL0Ec[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=30 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=30 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=30 next_retry=2026-11-10 10:41:12.051[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=42 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=42 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=42 next_retry=2026-11-10 10:58:14.247[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery expired notification=43 device=3uQLej2beN_x[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=43 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=43 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=43 next_retry=2026-11-10 10:58:14.276[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=55 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=55 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=55 next_retry=2026-11-10 11:02:50.177[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=56 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=56 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=56 next_retry=2026-11-10 11:02:50.199[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery expired notification=57 device=5ZHwiHCve53i[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=57 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=57 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=57 next_retry=2026-11-10 11:02:50.228[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=69 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=69 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=69 next_retry=2026-11-10 13:58:03.385[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=70 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=70 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=70 next_retry=2026-11-10 13:58:03.415[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=71 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=71 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=71 next_retry=2026-11-10 13:58:03.438[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery expired notification=72 device=uxB8BB8px_gK[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=72 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=72 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=72 next_retry=2026-11-10 13:58:03.477[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=84 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=84 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=84 next_retry=2026-11-10 13:59:50.680[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=85 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=85 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=85 next_retry=2026-11-10 13:59:50.705[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=86 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=86 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=86 next_retry=2026-11-10 13:59:50.728[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=87 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=87 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=87 next_retry=2026-11-10 13:59:50.756[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery expired notification=88 device=CI6qPU86OuZI[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=88 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=88 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=88 next_retry=2026-11-10 13:59:50.799[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=100 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=100 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=100 next_retry=2026-11-10 14:01:43.685[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=101 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=101 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=101 next_retry=2026-11-10 14:01:43.707[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=102 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=102 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=102 next_retry=2026-11-10 14:01:43.728[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=103 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=103 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=103 next_retry=2026-11-10 14:01:43.757[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=104 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=104 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=104 next_retry=2026-11-10 14:01:43.785[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery expired notification=105 device=n_AePxHeHiIB[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=105 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=105 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=105 next_retry=2026-11-10 14:01:43.822[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=117 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=117 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=117 next_retry=2026-11-10 14:04:37.147[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=118 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=118 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=118 next_retry=2026-11-10 14:04:37.188[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=119 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=119 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=119 next_retry=2026-11-10 14:04:37.226[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=120 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=120 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=120 next_retry=2026-11-10 14:04:37.265[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=121 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=121 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=121 next_retry=2026-11-10 14:04:37.301[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=122 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=122 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=122 next_retry=2026-11-10 14:04:37.335[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery expired notification=123 device=tj1dGewZ_Ne2[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=123 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=123 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=123 next_retry=2026-11-10 14:04:37.388[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=135 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=135 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=135 next_retry=2026-11-10 14:07:27.063[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=136 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=136 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=136 next_retry=2026-11-10 14:07:27.083[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=137 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=137 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=137 next_retry=2026-11-10 14:07:27.103[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=138 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=138 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=138 next_retry=2026-11-10 14:07:27.123[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=139 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=139 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=139 next_retry=2026-11-10 14:07:27.142[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=140 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=140 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=140 next_retry=2026-11-10 14:07:27.160[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=141 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=141 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=141 next_retry=2026-11-10 14:07:27.180[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=148 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=148 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=148 next_retry=2026-11-10 14:10:05.655[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=149 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=149 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=149 next_retry=2026-11-10 14:10:05.673[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=150 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=150 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=150 next_retry=2026-11-10 14:10:05.691[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=151 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=151 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=151 next_retry=2026-11-10 14:10:05.709[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=152 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=152 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=152 next_retry=2026-11-10 14:10:05.728[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=153 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=153 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=153 next_retry=2026-11-10 14:10:05.746[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=154 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=154 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=154 next_retry=2026-11-10 14:10:05.764[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=171 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=171 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=171 next_retry=2026-11-10 14:24:11.625[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=172 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=172 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=172 next_retry=2026-11-10 14:24:11.659[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=173 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=173 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=173 next_retry=2026-11-10 14:24:11.694[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=174 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=174 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=174 next_retry=2026-11-10 14:24:11.727[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=175 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=175 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=175 next_retry=2026-11-10 14:24:11.759[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=176 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=176 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=176 next_retry=2026-11-10 14:24:11.793[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=190 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=190 next_retry=2026-11-10 14:24:14.366[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=191 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=191 next_retry=2026-11-10 14:24:14.389[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=192 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=192 next_retry=2026-11-10 14:24:14.411[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=193 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=193 next_retry=2026-11-10 14:24:14.432[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=210 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=210 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=210 next_retry=2026-11-10 14:24:18.089[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=211 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=211 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=211 next_retry=2026-11-10 14:24:18.108[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=212 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=212 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=212 next_retry=2026-11-10 14:24:18.127[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=213 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=213 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=213 next_retry=2026-11-10 14:24:18.145[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=254 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=254 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=254 next_retry=2026-11-10 14:26:44.904[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=255 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=255 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=255 next_retry=2026-11-10 14:26:44.926[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=256 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=256 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=256 next_retry=2026-11-10 14:26:44.948[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=281 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=281 next_retry=2026-11-10 14:26:47.286[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=309 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=309 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=309 next_retry=2026-11-10 14:26:51.056[0m
+
+

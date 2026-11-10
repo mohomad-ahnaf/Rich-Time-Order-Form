@@ -1,0 +1,19 @@
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mScheduled Workers are not automatically triggered during local development.[0m
+
+  To manually trigger a scheduled event, run:
+    curl "http://127.0.0.1:8811/cdn-cgi/local/scheduled"
+  For more details, see [4mhttps://developers.cloudflare.com/workers/configuration/cron-triggers/#test-cron-triggers-locally[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery expired notification=30 device=O4Nu-PPdnMTQ[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=30 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush delivery failed notification=30 device=sjpqhDnA3eVR attempt=1 stage=vapid_or_encryption reason=runtime_error error=Error[0m
+
+
+[33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mpush retry scheduled notification=30 next_retry=2026-11-10 10:43:20.993[0m
+
+

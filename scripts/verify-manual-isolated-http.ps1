@@ -1,0 +1,6 @@
+param([Parameter(Mandatory=$true)][string]$RunJson)
+$ErrorActionPreference='Stop'; $root=Split-Path -Parent $PSScriptRoot; $tsx=Join-Path $root 'node_modules\tsx\dist\cli.mjs'; $run=Get-Content $RunJson|ConvertFrom-Json
+$env:TEST_BASE_URL=$run.base_url; $env:TEST_BASE=$run.base_url; $env:TEST_ADMIN_USERNAME=$run.admin_username; $env:TEST_ADMIN_PASSWORD=$run.admin_password; $env:TEST_ISOLATION_MARKER=$run.marker
+function Invoke-Check($name,$script){ $safe=$name -replace '[^A-Za-z0-9]','_'; & node.exe $tsx (Join-Path $root $script) *> (Join-Path $run.logs_path "$safe.log"); $code=[int]$LASTEXITCODE; Write-Host "$name exit=$code"; return $code }
+$marker=Invoke-Check 'marker' 'scripts\verify-isolated-marker.ts'; if($marker -ne 0){exit $marker}
+$fail=0; $results=@(); foreach($suite in @('verify-jobs-isolated.ts','verify-job-deleted-rep-isolated.ts','verify-rep-order-visibility-isolated.ts','verify-order-prices-pdf-header-isolated.ts','verify-notifications-isolated.ts','verify-push-outbox-isolated.ts')){ $env:TEST_RUN_ID=[Guid]::NewGuid().ToString('N'); $code=Invoke-Check $suite (Join-Path 'scripts' $suite); $results += [pscustomobject]@{suite=$suite;exit_code=$code}; if($code -ne 0){$fail++} }; $results | Format-Table -AutoSize; Write-Host "SUITES_EXECUTED=$($results.Count) SUITES_FAILED=$fail"; exit $fail
