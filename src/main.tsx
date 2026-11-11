@@ -80,6 +80,7 @@ async function api<T>(u: string, o: RequestInit = {}): Promise<T> {
   }
   if (!r.ok) {
     const b = await r.json().catch(() => ({}));
+    if (r.status === 503 && (b as any).code === "MAINTENANCE_MODE") window.dispatchEvent(new CustomEvent("rsk-maintenance-mode", { detail: true }));
     throw Error((b as any).error || `Request failed (${r.status})`);
   }
   return r.status === 204 ? (undefined as T) : r.json();
@@ -1082,6 +1083,16 @@ function SessionSplash({ error, retry }: { error: string; retry: () => void }) {
     </div>
   </main>;
 }
+function MaintenanceScreen() {
+  return <main className="maintenance-screen" role="status" aria-live="polite">
+    <div className="maintenance-content">
+      <img className="maintenance-wordmark" src="/rsk-holdings-wordmark.png" alt="RSK Holdings (PVT) LTD" />
+      <SettingsIcon className="maintenance-gear" aria-hidden="true" />
+      <h1>App under maintenance</h1>
+      <p>We’re making improvements. Please check back shortly.</p>
+    </div>
+  </main>;
+}
 function App() {
   const [ok, setOk] = useState(false),
     [sessionLoading, setSessionLoading] = useState(true),
@@ -1089,6 +1100,10 @@ function App() {
     [sessionAttempt, setSessionAttempt] = useState(0),
     [role, setRole] = useState<"ADMIN" | "REP" | "STOREKEEPER">("REP"),
     [username, setUsername] = useState(""),
+    [maintenanceCapable, setMaintenanceCapable] = useState(false),
+    [maintenanceBlocked, setMaintenanceBlocked] = useState(false),
+    [maintenanceEnabled, setMaintenanceEnabled] = useState(false),
+    [maintenanceBusy, setMaintenanceBusy] = useState(false),
     [accounts, setAccounts] = useState<any[]>([]),
     [accountUsername, setAccountUsername] = useState(""),
     [accountPassword, setAccountPassword] = useState(""),
@@ -1189,6 +1204,16 @@ function App() {
         csrf = s.csrfToken;
         setRole(s.role);
         setUsername(s.username);
+        setMaintenanceCapable(Boolean(s.maintenanceCapable));
+        const maintenanceResponse = await fetch("/api/maintenance/status", { cache: "no-store", signal: controller.signal });
+        if (!maintenanceResponse.ok) throw Error(`Maintenance status failed (${maintenanceResponse.status}).`);
+        const maintenance = await maintenanceResponse.json() as { maintenance?: boolean };
+        if (maintenance.maintenance && !s.maintenanceCapable) {
+          await waitForMinimumSplash();
+          if (!stale) { setMaintenanceBlocked(true); setOk(true); setSessionLoading(false); }
+          return;
+        }
+        setMaintenanceBlocked(false);
         const target = new URLSearchParams(location.search).get("notification");
         if (target === "order-pending") setOrderStatus("pending");
         setPage(target === "order" || target === "order-pending" ? "history" : target === "job" ? (s.role === "ADMIN" ? "jobs" : "home") : s.role === "STOREKEEPER" ? "dashboard" : s.role === "REP" ? "home" : "quote");
@@ -1222,16 +1247,57 @@ function App() {
     return () => { stale = true; };
   }, [sessionAttempt]);
   useEffect(() => {
+    const blocked = () => setMaintenanceBlocked(true);
+    window.addEventListener("rsk-maintenance-mode", blocked);
+    return () => window.removeEventListener("rsk-maintenance-mode", blocked);
+  }, []);
+  useEffect(() => {
+    if (!ok) return;
+    let disposed = false;
+    let inFlight = false;
+    const check = async () => {
+      if (disposed || inFlight || document.visibilityState !== "visible") return;
+      inFlight = true;
+      try {
+        const response = await fetch("/api/maintenance/status", { cache: "no-store" });
+        if (!response.ok) return;
+        const state = await response.json() as { maintenance?: boolean };
+        if (maintenanceCapable && !disposed) setMaintenanceEnabled(Boolean(state.maintenance));
+        if (state.maintenance && !maintenanceCapable && !disposed) setMaintenanceBlocked(true);
+        if (!state.maintenance && maintenanceBlocked && !disposed) { setMaintenanceBlocked(false); setSessionAttempt((attempt) => attempt + 1); }
+      } finally { inFlight = false; }
+    };
+    void check();
+    const timer = window.setInterval(check, 15_000);
+    window.addEventListener("focus", check); window.addEventListener("online", check); document.addEventListener("visibilitychange", check);
+    return () => { disposed = true; window.clearInterval(timer); window.removeEventListener("focus", check); window.removeEventListener("online", check); document.removeEventListener("visibilitychange", check); };
+  }, [ok, maintenanceBlocked, maintenanceCapable]);
+  useEffect(() => {
     // HTTPS development tunnels need a worker too; plain local Vite remains unaffected.
     if (!("serviceWorker" in navigator) || (!import.meta.env.PROD && !window.isSecureContext)) return;
     void navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => undefined);
   }, []);
   const refreshAccounts = () => role === "ADMIN" && api<any[]>("/api/accounts").then(setAccounts).catch((error) => setAccountError((error as Error).message));
-  useEffect(() => { if (ok && role === "ADMIN") refreshAccounts(); }, [ok, role]);
+  useEffect(() => { if (ok && !maintenanceBlocked && role === "ADMIN") refreshAccounts(); }, [ok, maintenanceBlocked, role]);
+  const refreshMaintenance = async () => {
+    if (!maintenanceCapable) return;
+    const state = await api<{ enabled: number }>("/api/maintenance");
+    setMaintenanceEnabled(Boolean(state.enabled));
+  };
+  useEffect(() => { if (ok && maintenanceCapable) void refreshMaintenance().catch((error) => setAccountError((error as Error).message)); }, [ok, maintenanceCapable]);
+  const setMaintenance = async (enabled: boolean) => {
+    if (enabled && !window.confirm("Enable maintenance mode? Other users will be blocked until you disable it.")) return;
+    setMaintenanceBusy(true); setAccountError(""); setAccountNotice("");
+    try {
+      const state = await api<{ enabled: number }>("/api/maintenance", { method: "PUT", body: JSON.stringify({ enabled }) });
+      setMaintenanceEnabled(Boolean(state.enabled));
+      setAccountNotice(enabled ? "Maintenance mode is active. Other users are blocked." : "Maintenance mode is disabled.");
+    } catch (error) { setAccountError((error as Error).message); } finally { setMaintenanceBusy(false); }
+  };
   const refreshNotifications = async (before?: number) => {
     try { const result = await api<any>(`/api/notifications?limit=20${before ? `&before=${before}` : ""}`); const newest = result.notifications[0]; if (!before && newest && newestNotificationId.current !== null && newest.id > newestNotificationId.current && document.visibilityState === "visible") setForegroundNotification(newest); if (!before && newest) newestNotificationId.current = Math.max(newestNotificationId.current || 0, newest.id); setNotifications((current) => before ? [...current, ...result.notifications] : result.notifications); setUnreadNotifications(result.unread); setNotificationsNext(result.nextBefore); setNotificationError(""); } catch (reason) { setNotificationError((reason as Error).message); }
   };
-  useEffect(() => { if (!ok) return; void refreshNotifications(); const refresh = () => { if (document.visibilityState === "visible") void refreshNotifications(); }; const timer = window.setInterval(refresh, 15000); window.addEventListener("focus", refresh); window.addEventListener("online", refresh); return () => { window.clearInterval(timer); window.removeEventListener("focus", refresh); window.removeEventListener("online", refresh); }; }, [ok]);
+  useEffect(() => { if (!ok || maintenanceBlocked) return; void refreshNotifications(); const refresh = () => { if (document.visibilityState === "visible") void refreshNotifications(); }; const timer = window.setInterval(refresh, 15000); window.addEventListener("focus", refresh); window.addEventListener("online", refresh); return () => { window.clearInterval(timer); window.removeEventListener("focus", refresh); window.removeEventListener("online", refresh); }; }, [ok, maintenanceBlocked]);
   useEffect(() => { const badging = navigator as Navigator & { setAppBadge?: (count?: number) => Promise<void>; clearAppBadge?: () => Promise<void> }; if (!ok || !badging.setAppBadge || !badging.clearAppBadge) return; void (unreadNotifications > 0 ? badging.setAppBadge(unreadNotifications) : badging.clearAppBadge()).catch(() => undefined); }, [ok, unreadNotifications]);
   useEffect(() => { if (!ok || !("serviceWorker" in navigator)) return; const message = (event: MessageEvent) => { if (event.data?.type === "RSK_FOREGROUND_NOTIFICATION") { setForegroundNotification(event.data.notification); void refreshNotifications(); } }; navigator.serviceWorker.addEventListener("message", message); return () => navigator.serviceWorker.removeEventListener("message", message); }, [ok]);
   useEffect(() => {
@@ -1244,7 +1310,7 @@ function App() {
     return () => window.removeEventListener("rsk-open-orders", openOrders);
   }, []);
   useEffect(() => {
-    if (!ok) return;
+    if (!ok || maintenanceBlocked) return;
     let stale = false;
     const requestSequence = ++historyRequestSequence.current;
     setHistoryLoading(true);
@@ -1266,9 +1332,9 @@ function App() {
       stale = true;
       window.clearTimeout(timer);
     };
-  }, [ok, historyQuery, role, orderStatus]);
+  }, [ok, maintenanceBlocked, historyQuery, role, orderStatus]);
   useEffect(() => {
-    if (!ok || role === "STOREKEEPER") return;
+    if (!ok || maintenanceBlocked || role === "STOREKEEPER") return;
     let stale = false;
     setBuyerLoading(true);
     setBuyerError("");
@@ -1279,9 +1345,9 @@ function App() {
         .finally(() => { if (!stale) setBuyerLoading(false); });
     }, 250);
     return () => { stale = true; window.clearTimeout(timer); };
-  }, [ok, buyerQuery]);
+  }, [ok, maintenanceBlocked, buyerQuery]);
   useEffect(() => {
-    if (!ok || role === "STOREKEEPER") return;
+    if (!ok || maintenanceBlocked || role === "STOREKEEPER") return;
     let stale = false;
     const requestSequence = ++productRequestSequence.current;
     setProductLoading(true);
@@ -1293,9 +1359,9 @@ function App() {
         .finally(() => { if (!stale && requestSequence === productRequestSequence.current) setProductLoading(false); });
     }, 250);
     return () => { stale = true; window.clearTimeout(timer); };
-  }, [ok, productQuery]);
+  }, [ok, maintenanceBlocked, productQuery]);
   useEffect(() => {
-    if (!ok) return;
+    if (!ok || maintenanceBlocked) return;
     const needsProducts = role !== "STOREKEEPER" && (page === "quote" || page === "products" || itemPickerOpen);
     const needsOrders = page === "history" || (page === "dashboard" && role === "STOREKEEPER") || Boolean(saved) || Boolean(dispatchDetail);
     if (!needsProducts && !needsOrders) return;
@@ -1358,7 +1424,7 @@ function App() {
       window.removeEventListener("focus", onVisible);
       window.removeEventListener("online", onOnline);
     };
-  }, [ok, page, itemPickerOpen, saved?.id, dispatchDetail?.id, historyQuery, productQuery, role, orderStatus, dispatchNotes, deliveryReference]);
+  }, [ok, maintenanceBlocked, page, itemPickerOpen, saved?.id, dispatchDetail?.id, historyQuery, productQuery, role, orderStatus, dispatchNotes, deliveryReference]);
   const resetNewOrder = () => {
     setB(null);
     setIts([]);
@@ -1434,6 +1500,7 @@ function App() {
     return () => document.removeEventListener("focusin", keepVisible);
   }, []);
   if (sessionLoading) return <SessionSplash error={sessionError} retry={() => setSessionAttempt((attempt) => attempt + 1)} />;
+  if (maintenanceBlocked && !maintenanceCapable) return <MaintenanceScreen />;
   if (!ok) return <Login />;
   const unavailableItems = its.filter((item) => !ps.some((product) => product.id === item.p.id && product.active));
   const total = its.reduce((n, i) => n + i.unitPriceMinor * i.q, 0);
@@ -1551,6 +1618,7 @@ function App() {
         <button className="header-action notification-bell" onClick={() => { setNotificationOpen((open) => !open); if (!notificationOpen) void refreshNotifications(); }} aria-label={`Notifications${unreadNotifications ? `, ${unreadNotifications} unread` : ""}`}><Bell />{unreadNotifications > 0 && <span className="notification-count">{unreadNotifications > 99 ? "99+" : unreadNotifications}</span>}</button>
         <button className="header-action" onClick={() => navigate("account")} aria-label="Settings"><SettingsIcon /></button>
       </header>
+      {maintenanceCapable && maintenanceEnabled && <p className="maintenance-indicator" role="status"><SettingsIcon aria-hidden="true" /> Maintenance mode active — other users are blocked.</p>}
       <main className="app-main">
         {syncNotice && <p className="sync-notice" role="status">{syncNotice}</p>}
         {foregroundNotification && <aside className="foreground-notice" role="status"><span>{foregroundNotification.message || "You have a new update."}</span><button type="button" onClick={() => { const notification = foregroundNotification; setForegroundNotification(null); if (notification.target_type === "order" || notification.target_type === "order-pending") { if (notification.target_type === "order-pending") setOrderStatus("pending"); setPage("history"); } else if (notification.target_type === "job") setPage(role === "ADMIN" ? "jobs" : "home"); }} aria-label="Open notification">Open</button><button type="button" onClick={() => setForegroundNotification(null)} aria-label="Dismiss notification"><X aria-hidden="true" /></button></aside>}
@@ -1705,6 +1773,10 @@ function App() {
               <div className="form-footer form-footer-right"><button className="primary account-submit">Update password</button></div>
             </form>}
             {accountSection === "profile" && <PhoneNotificationControls />}
+            {accountSection === "profile" && maintenanceCapable && <section className="maintenance-controls" aria-label="Maintenance mode">
+              <div><h2>Maintenance mode</h2><p>{maintenanceEnabled ? "Active. Other users are seeing the maintenance screen." : "Off. All active users can use the app."}</p></div>
+              <button type="button" className={maintenanceEnabled ? "danger-button" : "primary"} disabled={maintenanceBusy} onClick={() => void setMaintenance(!maintenanceEnabled)}>{maintenanceBusy ? "Saving…" : maintenanceEnabled ? "Disable maintenance" : "Enable maintenance"}</button>
+            </section>}
             {accountSection === "profile" && <section className="account-signout" aria-label="Sign out">
               <div><h2>Sign out</h2><p>Sign out of this device and disconnect its phone-notification subscription.</p></div>
               <button type="button" className="account-signout-button" onClick={() => void logout()}><LogOut aria-hidden="true" /> Log out</button>

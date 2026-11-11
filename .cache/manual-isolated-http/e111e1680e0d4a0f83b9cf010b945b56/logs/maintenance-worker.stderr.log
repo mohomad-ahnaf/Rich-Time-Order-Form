@@ -1,0 +1,30 @@
+
+<--- Last few GCs --->
+
+[24528:0000019D1CB77000]     1937 ms: Scavenge 100.1 (135.0) -> 99.7 (136.3) MB, pooled: 0 MB, 1.44 / 0.00 ms  (average mu = 0.994, current mu = 0.994) external memory pressure; 
+[24528:0000019D1CB77000]     1965 ms: Scavenge 101.1 (137.4) -> 101.0 (137.4) MB, pooled: 0 MB, 0.40 / 0.00 ms  (average mu = 0.994, current mu = 0.994) external memory pressure; 
+
+
+<--- JS stacktrace --->
+
+FATAL ERROR: Zone Allocation failed - process out of memory
+----- Native stack trace -----
+
+ 1: 00007FF7A19C4BB7 
+ 2: 00007FF7A1924C6B 
+ 3: 00007FF7A2532A11 
+ 4: 00007FF7A251F4C6 
+ 5: 00007FF7A2000B9B 
+ 6: 00007FF7A20AAFCB 
+ 7: 00007FF7A20A828A 
+ 8: 00007FF7A20AA9EC 
+ 9: 00007FF7A20ACCE5 
+10: 00007FF7A20971D0 
+11: 00007FF7A207D3CD 
+12: 00007FF7A207D831 
+13: 00007FF7A207DEAA 
+14: 00007FF7A207EF5E 
+15: 00007FF7A207EA71 
+16: 00007FF7A207E386 
+17: 00007FF7A205BAB2 
+18: 00007FF7425ADAFA 

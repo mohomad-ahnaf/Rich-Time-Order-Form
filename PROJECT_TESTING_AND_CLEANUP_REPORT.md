@@ -113,6 +113,22 @@ User-run manual verification against the marker-matched disposable D1 database c
 
 This is recorded as an isolated HTTP PASS. It does not verify production deployment, real remote D1 data, or physical-device behavior.
 
+## Maintenance mode extension (local)
+
+- Local D1 backup created before migration: `.local-backups/maintenance-before-20261110-204757.sqlite`.
+- Additive migration `0018_maintenance_mode.sql` applied locally: PASS (7 statements). It adds an explicit `maintenance_capable` user capability, persistent state, and audit table; it does not delete sessions or business data.
+- Production build: PASS.
+- Existing unit tests: PASS (2 files, 5 tests).
+- Isolated authenticated HTTP coverage for the new maintenance endpoints and physical-browser transition behavior: NOT TESTED in this run. It remains required before production deployment.
+
+### Maintenance verification attempt
+
+- A fresh marker-guarded manual isolated run was prepared at `.cache/manual-isolated-http/e111e1680e0d4a0f83b9cf010b945b56` with dummy configuration, a disposable D1 state directory, and `PUSH_TEST_MODE=1`.
+- The Worker did not reach readiness: its owned Wrangler/Node process exited with `FATAL ERROR: Zone Allocation failed - process out of memory` before the marker request or any maintenance suite request could run. Preserved stderr: `.cache/manual-isolated-http/e111e1680e0d4a0f83b9cf010b945b56/logs/maintenance-worker.stderr.log`.
+- Therefore Developer/role authorization, maintenance `503` behavior, session recovery, restart persistence, scheduled pause/resume, audit records, and browser transition checks are **BLOCKED / NOT TESTED**, not PASS.
+- Only the failed temporary Worker process was stopped. The main Worker, main D1, and main data were not touched.
+- The same disposable D1 was subsequently reseeded with supported DML only. The prior `CREATE TEMP TABLE fixture_assertion` was the rejected `SQLITE_AUTH` statement; no fixture rows had been committed. The corrected seed exited `0` and the separate Wrangler JSON verification exited `0`, confirming exactly: `Developer` (active `ADMIN`, `maintenance_capable=1`) and `OtherAdmin` (active `ADMIN`, `maintenance_capable=0`). The HTTP maintenance suite has not yet been rerun.
+
 ## Test matrix
 
 | Area | HTTP/unit | Browser | Physical device |

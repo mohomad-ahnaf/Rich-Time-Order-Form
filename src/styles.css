@@ -588,7 +588,19 @@ label { color: #d9e5fc; font-weight: 650; }
 .session-splash-retry { display:grid; justify-items:center; gap:14px; }
 .session-splash-retry p { margin:0; color:#ffd3d7; font-size:14px; }
 @keyframes session-spin { to { transform:rotate(360deg); } }
+.maintenance-screen { min-height:100dvh; display:grid; place-items:center; padding:max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)); background:#08142d url("/rsk-brand-background.png") center / cover no-repeat; color:var(--ink); text-align:center; }
+.maintenance-content { display:grid; justify-items:center; gap:16px; width:min(100%,360px); }
+.maintenance-wordmark { width:min(100%,290px); height:auto; max-height:90px; object-fit:contain; }
+.maintenance-gear { width:58px; height:58px; color:#91b1ff; animation:maintenance-spin 3s linear infinite; }
+.maintenance-content h1 { margin:0; font-size:26px; }
+.maintenance-content p { margin:0; color:var(--muted); line-height:1.5; }
+@keyframes maintenance-spin { to { transform:rotate(360deg); } }
+.maintenance-controls { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-top:16px; padding:15px; border:1px solid rgb(255 180 69 / 34%); border-radius:14px; background:rgb(90 66 24 / 30%); }
+.maintenance-controls > div { min-width:0; }.maintenance-controls h2 { margin:0; color:#ffe3b0; font-size:17px; }.maintenance-controls p { margin:4px 0 0; color:#e6cda3; font-size:13px; line-height:1.4; }.maintenance-controls button { flex:0 0 auto; min-height:44px; }
+.maintenance-indicator { position:fixed; z-index:50; top:calc(var(--topbar-height, 64px) + env(safe-area-inset-top)); left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:7px; width:min(calc(100% - 32px), 520px); margin:8px 0; padding:9px 12px; border:1px solid rgb(255 180 69 / 38%); border-radius:10px; background:#563b18; color:#ffe0a5; box-shadow:var(--shadow-sm); font-size:13px; }
+@media (max-width:380px) { .maintenance-controls { align-items:flex-start; flex-direction:column; }.maintenance-controls button { width:100%; } }
 @media (prefers-reduced-motion:reduce) { .session-spinner { animation:none; border-top-color:rgb(209 224 255 / 34%); } }
+@media (prefers-reduced-motion:reduce) { .maintenance-gear { animation:none; } }
 @media (max-width:380px) { .login-card { padding:20px; } .login-wordmark { height:58px; } .session-splash-wordmark { max-height:84px; } }
 @media (max-width:380px) { .notification-panel .section-heading { display:grid; grid-template-columns:1fr; gap:8px; } .notification-panel .mark-all-read { justify-self:start; } }
 @media (max-width:380px) { .account-signout { align-items:flex-start; flex-direction:column; } .account-signout-button { width:100%; } }

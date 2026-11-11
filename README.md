@@ -40,6 +40,10 @@ Cloudflare’s free plan has request, Worker CPU, D1 storage/query, and deployme
 
 Export a remote backup with `npx wrangler d1 export rich-time-db --remote --output backup.sql`. Keep the export securely. To restore to a newly created database, inspect the SQL first and run `npx wrangler d1 execute NEW_DATABASE_NAME --remote --file backup.sql`; then bind the new database ID and deploy. Test restoration against a local or staging database before replacing production.
 
+## Maintenance recovery
+
+Maintenance mode is controlled only by the persisted `maintenance_capable` capability on the visible Developer Admin account. If maintenance is enabled, sign in as Developer and disable it from **Settings → Profile → Maintenance mode**. Sessions are not deleted, so normal access returns automatically after the flag is cleared. Requests that already passed the central gate before the flag was enabled may finish; all subsequent protected business requests receive `503 MAINTENANCE_MODE`. Scheduled reminder and push-outbox processing pause while it is active and resume through their normal bounded processing after it ends. If Developer cannot sign in, use the established local/production administrator recovery process to restore that existing account's password or capability through an audited database recovery procedure; there is deliberately no unauthenticated URL, secret query parameter, or frontend bypass.
+
 ## PDF sharing
 
 PDFs are generated in the browser from saved data, with repeated item headers and page numbers. On supported mobile browsers, Share opens the native sharing menu so the owner can choose WhatsApp or another app. When file sharing is not supported, the app downloads the PDF for manual attachment. Database operations require internet access; no offline mode is advertised.

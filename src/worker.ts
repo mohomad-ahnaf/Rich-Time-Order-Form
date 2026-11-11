@@ -11,6 +11,7 @@ type User = {
     active: number;
     session_version: number;
     deleted_at: string | null;
+    maintenance_capable: number;
 };
 type Bindings = {
     DB: D1Database;
@@ -39,13 +40,14 @@ const encoder = new TextEncoder();
 // It is never enabled from a request or normal production configuration.
 const pushTestCalls = new Map<string, number>();
 const json = (data: unknown, status = 200) => Response.json(data, { status });
-const fail = (message: string, status = 400) => json({ error: message }, status);
+const fail = (message: string, status = 400, code?: string) => json({ error: message, ...(code ? { code } : {}) }, status);
+const maintenanceUnavailable = () => fail("App under maintenance. Please check back shortly.", 503, "MAINTENANCE_MODE");
 const normalizeUsername = (value: string) => value.trim().toLocaleLowerCase();
 const text = z.string().trim().min(1).max(200);
 const optional = z.string().trim().max(2000).optional().nullable();
 const vapidSubject = (env: Bindings) => /^(mailto:|https:\/\/)/.test(env.VAPID_SUBJECT || "") ? env.VAPID_SUBJECT! : null;
 const password = z.string().min(1).max(256);
-const userSelect = "id,username,username_normalized,password_hash,COALESCE(role_v2,role) AS role,active,session_version,deleted_at";
+const userSelect = "id,username,username_normalized,password_hash,COALESCE(role_v2,role) AS role,active,session_version,deleted_at,COALESCE(maintenance_capable,0) AS maintenance_capable";
 const b64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 async function opaqueSubscriptionId(endpoint: string) { return b64(new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(endpoint)))).slice(0, 12); }
 const allowlistedProviderReason = (body: unknown) => { const value = typeof body === "string" ? body : ""; const match = value.match(/(?:BadJwtToken|UnauthorizedRegistration|InvalidToken|InvalidProviderToken|ExpiredProviderToken|InvalidSignature|InvalidAudience)/i); return match ? match[0] : "provider_rejected"; };
@@ -67,7 +69,7 @@ async function ensureLegacyAdmin(env: Bindings) { let admin = await env.DB.prepa
     await env.DB.prepare("UPDATE quotations SET created_by_user_id=? WHERE created_by_user_id IS NULL").bind(admin.id).run(); return admin || null; }
 const sessionCookie = (request: Request, token: string, maxAge = 90 * 24 * 60 * 60) => `rt_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${maxAge}${request.url.startsWith("https:") ? "; Secure" : ""}`;
 async function makeSession(env: Bindings, user: User) { const id = crypto.randomUUID(); const csrf = crypto.randomUUID(); await env.DB.prepare("INSERT INTO user_sessions(id,user_id,session_version,csrf,expires_at) VALUES(?,?,?,?,datetime('now','+90 days'))").bind(id, user.id, user.session_version, csrf).run(); return { id, csrf }; }
-async function getSession(env: Bindings, request: Request) { const id = (request.headers.get("cookie") || "").match(/(?:^|;\s*)rt_session=([^;]+)/)?.[1]; if (!id) return null; const row = await env.DB.prepare("SELECT s.id AS session_id,s.csrf,s.session_version AS stored_session_version,u.id,u.username,u.username_normalized,u.password_hash,COALESCE(u.role_v2,u.role) AS role,u.active,u.session_version,u.deleted_at FROM user_sessions s JOIN users u ON u.id=s.user_id WHERE s.id=? AND s.revoked_at IS NULL AND s.expires_at>CURRENT_TIMESTAMP").bind(id).first<any>(); if (!row || row.deleted_at || !row.active || row.stored_session_version !== row.session_version) return null; const user = { id: row.id, username: row.username, username_normalized: row.username_normalized, password_hash: row.password_hash, role: row.role, active: row.active, session_version: row.session_version, deleted_at: row.deleted_at } as User; await env.DB.prepare("UPDATE user_sessions SET last_seen_at=CURRENT_TIMESTAMP,expires_at=datetime('now','+90 days') WHERE id=? AND revoked_at IS NULL").bind(id).run(); return { user, csrf: row.csrf, sessionId: id }; }
+async function getSession(env: Bindings, request: Request) { const id = (request.headers.get("cookie") || "").match(/(?:^|;\s*)rt_session=([^;]+)/)?.[1]; if (!id) return null; const row = await env.DB.prepare("SELECT s.id AS session_id,s.csrf,s.session_version AS stored_session_version,u.id,u.username,u.username_normalized,u.password_hash,COALESCE(u.role_v2,u.role) AS role,u.active,u.session_version,u.deleted_at,COALESCE(u.maintenance_capable,0) AS maintenance_capable FROM user_sessions s JOIN users u ON u.id=s.user_id WHERE s.id=? AND s.revoked_at IS NULL AND s.expires_at>CURRENT_TIMESTAMP").bind(id).first<any>(); if (!row || row.deleted_at || !row.active || row.stored_session_version !== row.session_version) return null; const user = { id: row.id, username: row.username, username_normalized: row.username_normalized, password_hash: row.password_hash, role: row.role, active: row.active, session_version: row.session_version, deleted_at: row.deleted_at, maintenance_capable: row.maintenance_capable } as User; await env.DB.prepare("UPDATE user_sessions SET last_seen_at=CURRENT_TIMESTAMP,expires_at=datetime('now','+90 days') WHERE id=? AND revoked_at IS NULL").bind(id).run(); return { user, csrf: row.csrf, sessionId: id }; }
 const attempts = new Map<string, {
     count: number;
     reset: number;
@@ -78,9 +80,20 @@ app.post("/api/login", async (c) => { await ensureLegacyAdmin(c.env); const ip =
     attempts.set(ip, { count: (attempt?.reset > now ? attempt.count : 0) + 1, reset: now + 15 * 60000 });
     return fail("Invalid username or password", 401);
 } attempts.delete(ip); const session = await makeSession(c.env, user); return new Response(null, { status: 204, headers: { "Set-Cookie": sessionCookie(c.req.raw, session.id) } }); });
+const maintenanceState = async (db: D1Database) => (await db.prepare("SELECT enabled,updated_at,updated_by_username FROM maintenance_state WHERE id=1").first<{ enabled: number; updated_at: string; updated_by_username: string | null }>()) || { enabled: 0, updated_at: "", updated_by_username: null };
+const requireMaintenanceController = (c: { get(name: "user"): User }) => c.get("user").maintenance_capable === 1 ? null : fail("Maintenance access is restricted", 403);
+app.get("/api/maintenance/status", async (c) => {
+    const state = await maintenanceState(c.env.DB);
+    c.header("Cache-Control", "no-store, no-cache, must-revalidate, private");
+    return json({ maintenance: Boolean(state.enabled), message: state.enabled ? "App under maintenance. We’re making improvements. Please check back shortly." : "" });
+});
 app.use("/api/*", async (c, next) => { await ensureLegacyAdmin(c.env); const session = await getSession(c.env, c.req.raw); if (!session)
     return fail("Authentication required", 401); c.header("Cache-Control", "no-store, no-cache, must-revalidate, private"); c.header("Pragma", "no-cache"); c.header("Set-Cookie", sessionCookie(c.req.raw, session.sessionId)); c.set("user", session.user); c.set("csrf", session.csrf); c.set("sessionId", session.sessionId); if (!["GET", "HEAD", "OPTIONS"].includes(c.req.method) && c.req.header("X-CSRF-Token") !== session.csrf)
-    return fail("Invalid request token", 403); await next(); });
+    return fail("Invalid request token", 403);
+    const maintenance = await maintenanceState(c.env.DB);
+    const allowedDuringMaintenance = c.req.path === "/api/session" || c.req.path === "/api/logout" || c.req.path === "/api/maintenance";
+    if (maintenance.enabled && !session.user.maintenance_capable && !allowedDuringMaintenance) return maintenanceUnavailable();
+    await next(); });
 const requireAdmin = (c: {
     get(name: "user"): User;
 }) => c.get("user").role === "ADMIN" ? null : fail("Administrator access required", 403);
@@ -88,8 +101,19 @@ const requireOrderMaker = (c: { get(name: "user"): User }) => c.get("user").role
 const requireNotStorekeeper = (c: { get(name: "user"): User }) => c.get("user").role === "STOREKEEPER" ? fail("Storekeeper access is limited to dispatch orders", 403) : null;
 const revokeUserSessions = (db: D1Database, userId: number) => db.prepare("UPDATE user_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE user_id=? AND revoked_at IS NULL").bind(userId).run();
 const disableUserSubscriptions = (db: D1Database, userId: number) => db.prepare("UPDATE push_subscriptions SET disabled_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE user_id=? AND disabled_at IS NULL").bind(userId).run();
-app.get("/api/session", c => json({ userId: c.get("user").id, username: c.get("user").username, role: c.get("user").role, csrfToken: c.get("csrf") }));
+app.get("/api/session", c => json({ userId: c.get("user").id, username: c.get("user").username, role: c.get("user").role, maintenanceCapable: c.get("user").maintenance_capable === 1, csrfToken: c.get("csrf") }));
 app.post("/api/logout", async (c) => { await c.env.DB.prepare("UPDATE user_sessions SET revoked_at=CURRENT_TIMESTAMP WHERE id=?").bind(c.get("sessionId")).run(); return new Response(null, { status: 204, headers: { "Set-Cookie": sessionCookie(c.req.raw, "", 0) } }); });
+app.get("/api/maintenance", async (c) => { const denied = requireMaintenanceController(c); if (denied) return denied; return json(await maintenanceState(c.env.DB)); });
+app.put("/api/maintenance", async (c) => {
+    const denied = requireMaintenanceController(c); if (denied) return denied;
+    const parsed = z.object({ enabled: z.boolean() }).safeParse(await c.req.json()); if (!parsed.success) return fail("Invalid maintenance request");
+    const user = c.get("user");
+    await c.env.DB.batch([
+        c.env.DB.prepare("UPDATE maintenance_state SET enabled=?,updated_at=CURRENT_TIMESTAMP,updated_by_user_id=?,updated_by_username=? WHERE id=1").bind(parsed.data.enabled ? 1 : 0, user.id, user.username),
+        c.env.DB.prepare("INSERT INTO maintenance_audit(enabled,actor_user_id,actor_username) VALUES(?,?,?)").bind(parsed.data.enabled ? 1 : 0, user.id, user.username),
+    ]);
+    return json(await maintenanceState(c.env.DB));
+});
 type NotificationRecipient = { id: number; username: string };
 async function notify(db: D1Database, recipients: NotificationRecipient[], actorId: number, eventKey: string, type: string, message: string, targetType?: "order" | "order-pending" | "job", targetId?: number) {
     const safeMessage = message.replace(/[\r\n]+/g, " ").trim().slice(0, 500);
@@ -99,7 +123,10 @@ async function notify(db: D1Database, recipients: NotificationRecipient[], actor
     for (const recipient of unique) { const row = await db.prepare("SELECT id FROM notifications WHERE recipient_user_id=? AND event_key=?").bind(recipient.id, eventKey).first<{ id: number }>(); if (row) { const outbox = await db.prepare("INSERT OR IGNORE INTO notification_outbox(notification_id,next_attempt_at) VALUES(?,CURRENT_TIMESTAMP)").bind(row.id).run(); console.log(`notification ${outbox.meta.changes ? "queued" : "deduplicated"} id=${row.id} type=${type} recipient=${recipient.id}`); } }
 }
 function scheduleEventPush(c: { env: Bindings; executionCtx: ExecutionContext }, eventKey: string, label: string) {
-    c.executionCtx.waitUntil(deliverPushOutbox(c.env, undefined, undefined, eventKey).catch((error) => console.warn(`${label} notification scheduling failed: ${(error as Error).name || "Error"}`)));
+    c.executionCtx.waitUntil((async () => {
+        if ((await maintenanceState(c.env.DB)).enabled) return;
+        await deliverPushOutbox(c.env, undefined, undefined, eventKey);
+    })().catch((error) => console.warn(`${label} notification scheduling failed: ${(error as Error).name || "Error"}`)));
 }
 async function deliverPushOutbox(env: Bindings, userId?: number, endpoint?: string, eventKey?: string) {
     const subject = vapidSubject(env); if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY || !subject) return;
@@ -191,6 +218,7 @@ app.delete("/api/push/subscriptions", async (c) => { const parsed = z.object({ e
 app.get("/api/test/push-state", async (c) => { if (c.env.PUSH_TEST_MODE !== "1") return fail("Not found", 404); const denied = requireAdmin(c); if (denied) return denied; return json({ calls: Object.fromEntries(pushTestCalls) }); });
 app.post("/api/test/push-reset", async (c) => { if (c.env.PUSH_TEST_MODE !== "1") return fail("Not found", 404); const denied = requireAdmin(c); if (denied) return denied; pushTestCalls.clear(); return json({ ok: true }); });
 app.get("/api/test/isolation-marker", async (c) => { if (c.env.PUSH_TEST_MODE !== "1") return fail("Not found", 404); const denied = requireAdmin(c); if (denied) return denied; return json(await c.env.DB.prepare("SELECT marker FROM __isolated_harness_marker WHERE id=1").first()); });
+app.get("/api/test/maintenance-audit", async (c) => { if (c.env.PUSH_TEST_MODE !== "1") return fail("Not found", 404); const denied = requireMaintenanceController(c); if (denied) return denied; return json((await c.env.DB.prepare("SELECT enabled,actor_username,created_at FROM maintenance_audit ORDER BY id").all()).results); });
 const accountSchema = z.object({ username: text.max(100), password, role: z.enum(["REP", "STOREKEEPER"]).default("REP") });
 app.get("/api/accounts", async (c) => { const denied = requireAdmin(c); if (denied)
     return denied; const rows = await c.env.DB.prepare("SELECT id,username,COALESCE(role_v2,role) AS role,active,created_at,updated_at FROM users WHERE deleted_at IS NULL ORDER BY COALESCE(role_v2,role) DESC,username_normalized").all(); return json(rows.results); });
@@ -272,8 +300,8 @@ app.put("/api/products/:id", async (c) => { const denied = requireAdmin(c); if (
     if (product.price_minor !== existing.price_minor) await notify(c.env.DB, recipients, actor.id, priceEventKey, "PRODUCT_PRICE_CHANGED", `The minimum price for ${product.brand} was updated.`);
     if (nextActive !== existing.active) await notify(c.env.DB, recipients, actor.id, visibilityEventKey, nextActive ? "PRODUCT_UNHIDDEN" : "PRODUCT_HIDDEN", nextActive ? `${product.brand} is available again.` : `${product.brand} is no longer available.`);
     // Product changes notify active Reps immediately; cron remains recovery only.
-    if (product.price_minor !== existing.price_minor) c.executionCtx.waitUntil(deliverPushOutbox(c.env, undefined, undefined, priceEventKey).catch((error) => console.warn(`product price notification scheduling failed: ${(error as Error).name || "Error"}`)));
-    if (nextActive !== existing.active) c.executionCtx.waitUntil(deliverPushOutbox(c.env, undefined, undefined, visibilityEventKey).catch((error) => console.warn(`product visibility notification scheduling failed: ${(error as Error).name || "Error"}`)));
+    if (product.price_minor !== existing.price_minor) scheduleEventPush(c, priceEventKey, "product price");
+    if (nextActive !== existing.active) scheduleEventPush(c, visibilityEventKey, "product visibility");
     return json({ ok: true });
 }
 catch {
@@ -665,7 +693,10 @@ app.all("*", c => c.env.ASSETS.fetch(c.req.raw));
 export default {
     fetch: app.fetch,
     scheduled: (controller: ScheduledController, env: Bindings, ctx: ExecutionContext) => {
-        if (controller.cron === "0 4 * * *") ctx.waitUntil(runDailyPendingDispatchReminder(env).catch((error) => console.warn(`daily pending-dispatch reminder failed: ${(error as Error).name || "Error"}`)));
-        ctx.waitUntil(deliverPushOutbox(env).catch(() => undefined));
+        ctx.waitUntil((async () => {
+            if ((await maintenanceState(env.DB)).enabled) return;
+            if (controller.cron === "0 4 * * *") await runDailyPendingDispatchReminder(env).catch((error) => console.warn(`daily pending-dispatch reminder failed: ${(error as Error).name || "Error"}`));
+            await deliverPushOutbox(env).catch(() => undefined);
+        })());
     },
 };
